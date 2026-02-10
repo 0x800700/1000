@@ -33,7 +33,8 @@ func TestScoreRoundContractSuccess(t *testing.T) {
 	r := ClassicPreset()
 	g := NewGame(r, 1)
 	g.Round.BidWinner = 0
-	g.Round.BidValue = 80
+	g.Round.BidValue = 20
+	g.Round.Bids = map[int]int{0: 20}
 
 	g.Players[0].Tricks = [][]Card{
 		{{Suit: SuitHearts, Rank: RankA}, {Suit: SuitSpades, Rank: Rank10}},
@@ -56,6 +57,7 @@ func TestScoreRoundContractFail(t *testing.T) {
 	g := NewGame(r, 1)
 	g.Round.BidWinner = 0
 	g.Round.BidValue = 100
+	g.Round.Bids = map[int]int{0: 100}
 
 	g.Players[0].Tricks = [][]Card{
 		{{Suit: SuitHearts, Rank: Rank9}},

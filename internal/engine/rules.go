@@ -84,6 +84,11 @@ func scoreRound(g *GameState) {
 
 	contract := g.Round.BidWinner
 	if contract >= 0 {
+		if g.Round.BidValue == 0 && g.Round.Bids != nil {
+			if v, ok := g.Round.Bids[contract]; ok {
+				g.Round.BidValue = v
+			}
+		}
 		if g.Players[contract].RoundPts >= g.Round.BidValue {
 			if g.Rules.ContractScoresAsBid {
 				g.Players[contract].GameScore += g.Round.BidValue
