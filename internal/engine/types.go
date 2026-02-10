@@ -80,33 +80,33 @@ const (
 )
 
 type Rules struct {
-	Players               int
-	DeckRanks             []Rank
-	HandSize              int
-	KittySize             int
-	BidMin                int
-	BidStep               int
-	WinScore              int
-	MustFollowSuit        bool
-	MustTrumpIfVoid       bool
-	MustOverTrump         bool
-	ContractScoresAsBid   bool
+	Players                int
+	DeckRanks              []Rank
+	HandSize               int
+	KittySize              int
+	BidMin                 int
+	BidStep                int
+	WinScore               int
+	MustFollowSuit         bool
+	MustTrumpIfVoid        bool
+	MustOverTrump          bool
+	ContractScoresAsBid    bool
 	ContractFailPenaltyBid bool
 }
 
 func ClassicPreset() Rules {
 	return Rules{
-		Players:               3,
-		DeckRanks:             []Rank{Rank9, RankJ, RankQ, RankK, Rank10, RankA},
-		HandSize:              7,
-		KittySize:             3,
-		BidMin:                80,
-		BidStep:               10,
-		WinScore:              1000,
-		MustFollowSuit:        true,
-		MustTrumpIfVoid:       false,
-		MustOverTrump:         false,
-		ContractScoresAsBid:   false,
+		Players:                3,
+		DeckRanks:              []Rank{Rank9, RankJ, RankQ, RankK, Rank10, RankA},
+		HandSize:               7,
+		KittySize:              3,
+		BidMin:                 80,
+		BidStep:                10,
+		WinScore:               1000,
+		MustFollowSuit:         true,
+		MustTrumpIfVoid:        false,
+		MustOverTrump:          false,
+		ContractScoresAsBid:    false,
 		ContractFailPenaltyBid: true,
 	}
 }
@@ -127,6 +127,8 @@ type RoundState struct {
 	Kitty      []Card
 	HandsDealt bool
 	Bids       map[int]int
+	Passed     map[int]bool
+	BidTurn    int
 	BidWinner  int
 	BidValue   int
 	TrickCards []Card
@@ -134,9 +136,9 @@ type RoundState struct {
 }
 
 type GameState struct {
-	Rules  Rules
-	Seed   int64
-	Round  RoundState
+	Rules   Rules
+	Seed    int64
+	Round   RoundState
 	Players []PlayerState
 }
 
