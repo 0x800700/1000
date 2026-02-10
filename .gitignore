@@ -1,0 +1,12 @@
+# Go
+/bin/
+*.exe
+*.test
+*.out
+
+# Node
+web/node_modules/
+web/dist/
+
+# OS
+.DS_Store

@@ -13,12 +13,17 @@ import (
 	"thousand/internal/engine"
 )
 
+func generateSessionID() string {
+	return time.Now().Format("20060102150405")
+}
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
 type Session struct {
 	mu         sync.Mutex
+	id         string
 	state      engine.GameState
 	started    bool
 	actionIds  map[string]bool
@@ -34,6 +39,7 @@ var (
 func GetSession() *Session {
 	sessionOnce.Do(func() {
 		sessionInst = &Session{
+			id:         generateSessionID(),
 			actionIds:  map[string]bool{},
 			botPlayers: map[int]bots.Bot{},
 		}
@@ -193,7 +199,7 @@ func (s *Session) sendStateLocked(events []Event) {
 	}
 	msg := ServerMessage{
 		Type:   "state",
-		State:  BuildGameView(s.state, 0),
+		State:  BuildGameView(s.state, 0, s.id),
 		Events: events,
 	}
 	_ = s.conn.WriteJSON(msg)

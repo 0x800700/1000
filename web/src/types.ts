@@ -48,6 +48,10 @@ export type GameView = {
     bidStep: number
   }
   legalActions: ActionDTO[]
+  meta: {
+    sessionId: string
+    playerId: number
+  }
 }
 
 export type ServerMessage =

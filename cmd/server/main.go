@@ -19,6 +19,10 @@ func main() {
 
 	// WebSocket endpoint
 	mux.HandleFunc("/ws", server.WSHandler)
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
 
 	// Serve frontend build with SPA fallback
 	webDist := filepath.Join("web", "dist")

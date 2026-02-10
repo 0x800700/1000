@@ -31,6 +31,7 @@ type GameView struct {
 	Round        RoundView    `json:"round"`
 	Rules        RulesView    `json:"rules"`
 	LegalActions []ActionDTO  `json:"legalActions"`
+	Meta         MetaView     `json:"meta"`
 }
 
 type RulesView struct {
@@ -40,7 +41,12 @@ type RulesView struct {
 	BidStep   int `json:"bidStep"`
 }
 
-func BuildGameView(g engine.GameState, viewer int) *GameView {
+type MetaView struct {
+	SessionID string `json:"sessionId"`
+	PlayerID  int    `json:"playerId"`
+}
+
+func BuildGameView(g engine.GameState, viewer int, sessionID string) *GameView {
 	players := make([]PlayerView, 0, len(g.Players))
 	for i, p := range g.Players {
 		view := PlayerView{
@@ -52,7 +58,7 @@ func BuildGameView(g engine.GameState, viewer int) *GameView {
 		}
 		if i == viewer {
 			for _, c := range p.Hand {
-				view.Hand = append(view.Hand, *cardToDTO(c))
+				view.Hand = append(view.Hand, cardToDTO(c))
 			}
 		}
 		players = append(players, view)
@@ -64,7 +70,7 @@ func BuildGameView(g engine.GameState, viewer int) *GameView {
 	}
 	trickCards := make([]CardDTO, 0, len(g.Round.TrickCards))
 	for _, c := range g.Round.TrickCards {
-		trickCards = append(trickCards, *cardToDTO(c))
+		trickCards = append(trickCards, cardToDTO(c))
 	}
 	legal := []ActionDTO{}
 	for _, a := range engine.LegalActions(g, viewer) {
@@ -93,6 +99,10 @@ func BuildGameView(g engine.GameState, viewer int) *GameView {
 			BidStep:   g.Rules.BidStep,
 		},
 		LegalActions: legal,
+		Meta: MetaView{
+			SessionID: sessionID,
+			PlayerID:  viewer,
+		},
 	}
 }
 

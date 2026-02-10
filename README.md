@@ -22,6 +22,8 @@ Frontend (in another terminal):
 ```bash
 cd web
 npm install
+# or, once lockfile exists:
+# npm ci
 npm run dev
 ```
 Open `http://localhost:5173` for the Vite dev server.

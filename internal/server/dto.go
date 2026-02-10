@@ -86,7 +86,8 @@ func ActionFromEngine(a engine.Action) ActionDTO {
 		if a.Card == nil {
 			return ActionDTO{Type: "play_card"}
 		}
-		return ActionDTO{Type: "play_card", Card: cardToDTO(*a.Card)}
+		card := cardToDTO(*a.Card)
+		return ActionDTO{Type: "play_card", Card: &card}
 	default:
 		return ActionDTO{Type: "unknown"}
 	}
@@ -104,8 +105,8 @@ func (c CardDTO) toEngine() (engine.Card, error) {
 	return engine.Card{Suit: s, Rank: r}, nil
 }
 
-func cardToDTO(c engine.Card) *CardDTO {
-	return &CardDTO{Suit: suitToString(c.Suit), Rank: rankToString(c.Rank)}
+func cardToDTO(c engine.Card) CardDTO {
+	return CardDTO{Suit: suitToString(c.Suit), Rank: rankToString(c.Rank)}
 }
 
 func parseSuit(s string) (engine.Suit, error) {

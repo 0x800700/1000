@@ -14,17 +14,23 @@ export default function PixiTable({ hand, trickCards, legalCardKeys }: Props) {
 
   useEffect(() => {
     if (!containerRef.current) return
+    let destroyed = false
+    const app = new PIXI.Application()
 
-    const app = new PIXI.Application({
-      resizeTo: containerRef.current,
-      background: '#0b5d3b',
-      antialias: true
-    })
-
-    containerRef.current.appendChild(app.view as HTMLCanvasElement)
-    appRef.current = app
+    app
+      .init({
+        resizeTo: containerRef.current,
+        background: '#0b5d3b',
+        antialias: true
+      })
+      .then(() => {
+        if (destroyed) return
+        containerRef.current?.appendChild(app.canvas)
+        appRef.current = app
+      })
 
     return () => {
+      destroyed = true
       app.destroy(true, { children: true, texture: true, baseTexture: true })
     }
   }, [])

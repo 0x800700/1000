@@ -8,6 +8,10 @@ export default function Table() {
   const [log, setLog] = useState<string[]>([])
   const [discardSelection, setDiscardSelection] = useState<Card[]>([])
   const clientRef = useRef<ReturnType<typeof connect> | null>(null)
+  const [wsStatus, setWsStatus] = useState<{ readyState: number; error?: string }>({
+    readyState: WebSocket.CONNECTING
+  })
+  const [lastError, setLastError] = useState<string | null>(null)
 
   useEffect(() => {
     const client = connect((msg: ServerMessage) => {
@@ -19,6 +23,12 @@ export default function Table() {
       }
       if (msg.type === 'error') {
         setLog((prev) => [...prev, `Error: ${msg.error.message}`])
+        setLastError(msg.error.message)
+      }
+    }, (status) => {
+      setWsStatus(status)
+      if (status.error) {
+        setLastError(status.error)
       }
     })
 
@@ -70,6 +80,27 @@ export default function Table() {
     <section className="table-layout">
       <div className="table-canvas">
         <PixiTable hand={hand} trickCards={trickCards} legalCardKeys={legalCardKeys} />
+        <div className="hud">
+          <div>WS: {readyStateLabel(wsStatus.readyState)}</div>
+          <div>Session: {state?.meta.sessionId ?? '-'}</div>
+          <div>Player: {state?.meta.playerId ?? 0}</div>
+          <div>Phase: {state?.round.phase ?? '-'}</div>
+          <div>
+            Turn:{' '}
+            {state?.round.trickOrder?.[state?.round.trickCards?.length ?? 0] ??
+              state?.round.bidTurn ??
+              '-'}
+          </div>
+          <div>Last error: {lastError ?? '-'}</div>
+        </div>
+        {!state && (
+          <div className="loading">
+            <div>Loading...</div>
+            <button className="secondary" onClick={() => clientRef.current?.send({ type: 'request_state' })}>
+              Request state
+            </button>
+          </div>
+        )}
         <div className="hand-bar">
           {hand.map((c) => {
             const key = cardKey(c)
@@ -164,4 +195,19 @@ export default function Table() {
 
 function cardKey(c: Card) {
   return `${c.rank}${c.suit}`
+}
+
+function readyStateLabel(state: number) {
+  switch (state) {
+    case WebSocket.CONNECTING:
+      return 'CONNECTING'
+    case WebSocket.OPEN:
+      return 'OPEN'
+    case WebSocket.CLOSING:
+      return 'CLOSING'
+    case WebSocket.CLOSED:
+      return 'CLOSED'
+    default:
+      return String(state)
+  }
 }
