@@ -3,15 +3,9 @@ package server
 import (
 	"log"
 	"net/http"
-
-	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
-}
-
-// WSHandler is a placeholder WebSocket handler for scaffolding.
+// WSHandler handles WebSocket connections for the single-session MVP.
 func WSHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -20,14 +14,6 @@ func WSHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	for {
-		_, msg, err := conn.ReadMessage()
-		if err != nil {
-			return
-		}
-		// Echo for now
-		if err := conn.WriteMessage(websocket.TextMessage, msg); err != nil {
-			return
-		}
-	}
+	session := GetSession()
+	session.HandleConnection(conn)
 }

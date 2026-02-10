@@ -7,6 +7,12 @@ export default defineConfig({
     outDir: 'dist'
   },
   server: {
-    port: 5173
+    port: 5173,
+    proxy: {
+      '/ws': {
+        target: 'ws://localhost:8080',
+        ws: true
+      }
+    }
   }
 })

@@ -53,6 +53,29 @@ func LegalActions(g GameState, player int) []Action {
 	}
 }
 
+// CurrentPlayer returns the player ID expected to act in the current phase.
+func CurrentPlayer(g GameState) (int, bool) {
+	switch g.Round.Phase {
+	case PhaseBidding:
+		return g.Round.BidTurn, true
+	case PhaseTrumpSelect, PhaseKittyTake, PhaseDiscard:
+		if g.Round.BidWinner >= 0 {
+			return g.Round.BidWinner, true
+		}
+		return -1, false
+	case PhasePlayTricks:
+		if len(g.Round.TrickOrder) == 0 {
+			return g.Round.Leader, true
+		}
+		if len(g.Round.TrickCards) >= len(g.Round.TrickOrder) {
+			return -1, false
+		}
+		return g.Round.TrickOrder[len(g.Round.TrickCards)], true
+	default:
+		return -1, false
+	}
+}
+
 func ApplyAction(g *GameState, player int, a Action) error {
 	switch g.Round.Phase {
 	case PhaseBidding:
@@ -182,13 +205,13 @@ func applyPlay(g *GameState, player int, a Action) error {
 	if player != expected {
 		return errors.New("not your turn to play")
 	}
-	if !removeCard(&g.Players[player].Hand, *a.Card) {
-		return errors.New("card not in hand")
-	}
 	// Validate legal play (follow suit)
 	legal := legalPlays(*g, player)
 	if !actionInList(Action{Type: ActionPlayCard, Card: a.Card}, legal) {
 		return errors.New("illegal card play")
+	}
+	if !removeCard(&g.Players[player].Hand, *a.Card) {
+		return errors.New("card not in hand")
 	}
 
 	g.Round.TrickCards = append(g.Round.TrickCards, *a.Card)

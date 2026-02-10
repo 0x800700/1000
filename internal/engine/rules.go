@@ -38,6 +38,16 @@ func cardPoints(r Rank) int {
 	}
 }
 
+// RankStrength exposes the strength ordering for a rank.
+func RankStrength(r Rank) int {
+	return rankStrength(r)
+}
+
+// CardPoints exposes point value for a rank.
+func CardPoints(r Rank) int {
+	return cardPoints(r)
+}
+
 func trickWinner(order []int, cards []Card, trump *Suit) int {
 	if len(order) == 0 || len(cards) == 0 {
 		return -1

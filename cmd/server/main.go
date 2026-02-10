@@ -20,10 +20,16 @@ func main() {
 	// WebSocket endpoint
 	mux.HandleFunc("/ws", server.WSHandler)
 
-	// Serve frontend build
+	// Serve frontend build with SPA fallback
 	webDist := filepath.Join("web", "dist")
-	fs := http.FileServer(http.Dir(webDist))
-	mux.Handle("/", fs)
+	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := filepath.Join(webDist, filepath.Clean(r.URL.Path))
+		if info, err := os.Stat(path); err == nil && !info.IsDir() {
+			http.ServeFile(w, r, path)
+			return
+		}
+		http.ServeFile(w, r, filepath.Join(webDist, "index.html"))
+	}))
 
 	log.Printf("listening on %s", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
