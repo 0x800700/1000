@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import * as PIXI from 'pixi.js'
 import type { Card } from '../types'
-
 type Props = {
   trickCards: Card[]
 }
@@ -44,35 +43,15 @@ export default function PixiTable({ trickCards }: Props) {
     ring.drawRoundedRect(40, 40, app.screen.width - 80, app.screen.height - 120, 24)
     app.stage.addChild(ring)
 
-    const trickGroup = new PIXI.Container()
-    const startX = app.screen.width / 2 - (trickCards.length * 70) / 2
-    trickCards.forEach((c, i) => {
-      const card = drawCard(c)
-      card.x = startX + i * 74
-      card.y = app.screen.height / 2 - 110
-      card.scale.set(1.3, 1.3)
-      trickGroup.addChild(card)
+    const title = new PIXI.Text('Table', {
+      fill: 0xe0c36a,
+      fontSize: 18,
+      fontFamily: 'Georgia'
     })
-    app.stage.addChild(trickGroup)
+    title.x = 60
+    title.y = 60
+    app.stage.addChild(title)
   }, [trickCards])
 
   return <div className="pixi-root" ref={containerRef} />
-}
-
-function drawCard(c: Card) {
-  const g = new PIXI.Graphics()
-  g.beginFill(0xf5e6b3)
-  g.lineStyle(2, 0xb08a2e)
-  g.drawRoundedRect(0, 0, 48, 72, 6)
-  g.endFill()
-
-  const text = new PIXI.Text(`${c.rank}${c.suit}`, {
-    fill: 0x2b1f0a,
-    fontSize: 14,
-    fontFamily: 'Georgia'
-  })
-  text.x = 6
-  text.y = 6
-  g.addChild(text)
-  return g
 }

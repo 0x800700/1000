@@ -329,6 +329,18 @@ export default function Table() {
             </div>
           )}
         </div>
+        <div className="trick-center">
+          {trickCards.map((c, idx) => (
+            <CardView
+              key={`trick-${cardKey(c)}-${idx}`}
+              card={c}
+              index={idx}
+              total={trickCards.length}
+              isLegal={true}
+              size="trick"
+            />
+          ))}
+        </div>
         <div className="hand-fan">
           {hand.map((c, idx) => {
             const key = cardKey(c)
@@ -342,6 +354,7 @@ export default function Table() {
                 total={hand.length}
                 isLegal={state?.round.phase === 'Discard' ? true : isLegal}
                 isSelected={isSelected}
+                size="hand"
                 onClick={() => {
                   if (state?.round.phase === 'Discard') {
                     toggleDiscard(c)

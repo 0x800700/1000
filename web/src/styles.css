@@ -203,24 +203,39 @@ body {
   padding: 10px 12px;
 }
 
+.trick-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 16px;
+  z-index: 2;
+}
+
 .card {
   width: 72px;
   height: 104px;
   border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  background: linear-gradient(160deg, #fff7e0, #f1dfb2);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  background: linear-gradient(160deg, #fffaf0, #f3e3bd);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 8px;
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+  position: relative;
 }
 
 .card.legal:hover {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 12px 22px rgba(0, 0, 0, 0.35);
+}
+
+.card.legal {
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3), 0 0 0 2px rgba(224, 195, 106, 0.4);
 }
 
 .card.illegal {
@@ -232,14 +247,50 @@ body {
   outline: 2px solid #e0c36a;
 }
 
-.card .rank {
-  font-size: 16px;
-  font-weight: 700;
+.card.hand {
+  width: 78px;
+  height: 114px;
 }
 
-.card .suit {
-  font-size: 20px;
-  align-self: flex-end;
+.card.trick {
+  width: 96px;
+  height: 140px;
+}
+
+.card .corner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
+  position: absolute;
+}
+
+.card .corner .suit {
+  font-size: 14px;
+}
+
+.card .corner.top-left {
+  top: 8px;
+  left: 8px;
+}
+
+.card .corner.bottom-right {
+  bottom: 8px;
+  right: 8px;
+  transform: rotate(180deg);
+}
+
+.card .watermark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 46px;
+  opacity: 0.12;
+  font-weight: 700;
+  pointer-events: none;
 }
 
 .table-top {
