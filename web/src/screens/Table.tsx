@@ -173,26 +173,58 @@ export default function Table() {
           </div>
         )}
         <div className="table-top">
-          <div className="bot-panel left">
-            <div className="bot-name">
-              Bot A {botThinking(1) && <span className="thinking">•</span>}
+          <div className={`bot-panel left ${botThinking(1) ? 'is-thinking' : ''}`}>
+            <div className="bot-header">
+              <div className="bot-avatar">A</div>
+              <div className="bot-meta">
+                <div className="bot-name">Bot A</div>
+                {botThinking(1) && <div className="bot-thinking">thinking…</div>}
+              </div>
             </div>
             <div className="bot-stats">
-              <div>Bid: {state?.round.bids?.['1'] ?? '-'}</div>
-              <div>Contract: {state?.round.bidWinner === 1 ? state?.round.bidValue : '-'}</div>
-              <div>Tricks: {state?.players?.[1]?.tricks ?? 0}</div>
-              <div>Score: {state?.players?.[1]?.gameScore ?? 0}</div>
+              <div className="badge">
+                <span>BID</span>
+                <strong>{state?.round.bids?.['1'] ?? '-'}</strong>
+              </div>
+              <div className="badge">
+                <span>CONTRACT</span>
+                <strong>{state?.round.bidWinner === 1 ? state?.round.bidValue : '-'}</strong>
+              </div>
+              <div className="badge">
+                <span>TRICKS</span>
+                <strong>{state?.players?.[1]?.tricks ?? 0}</strong>
+              </div>
+              <div className="badge">
+                <span>SCORE</span>
+                <strong>{state?.players?.[1]?.gameScore ?? 0}</strong>
+              </div>
             </div>
           </div>
-          <div className="bot-panel right">
-            <div className="bot-name">
-              Bot B {botThinking(2) && <span className="thinking">•</span>}
+          <div className={`bot-panel right ${botThinking(2) ? 'is-thinking' : ''}`}>
+            <div className="bot-header">
+              <div className="bot-avatar">B</div>
+              <div className="bot-meta">
+                <div className="bot-name">Bot B</div>
+                {botThinking(2) && <div className="bot-thinking">thinking…</div>}
+              </div>
             </div>
             <div className="bot-stats">
-              <div>Bid: {state?.round.bids?.['2'] ?? '-'}</div>
-              <div>Contract: {state?.round.bidWinner === 2 ? state?.round.bidValue : '-'}</div>
-              <div>Tricks: {state?.players?.[2]?.tricks ?? 0}</div>
-              <div>Score: {state?.players?.[2]?.gameScore ?? 0}</div>
+              <div className="badge">
+                <span>BID</span>
+                <strong>{state?.round.bids?.['2'] ?? '-'}</strong>
+              </div>
+              <div className="badge">
+                <span>CONTRACT</span>
+                <strong>{state?.round.bidWinner === 2 ? state?.round.bidValue : '-'}</strong>
+              </div>
+              <div className="badge">
+                <span>TRICKS</span>
+                <strong>{state?.players?.[2]?.tricks ?? 0}</strong>
+              </div>
+              <div className="badge">
+                <span>SCORE</span>
+                <strong>{state?.players?.[2]?.gameScore ?? 0}</strong>
+              </div>
             </div>
           </div>
         </div>

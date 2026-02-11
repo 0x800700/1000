@@ -313,16 +313,74 @@ body {
   color: #f5e6b3;
 }
 
-.bot-name {
-  font-weight: 700;
-  margin-bottom: 6px;
+.bot-panel.is-thinking {
+  border-color: rgba(224, 195, 106, 0.7);
+  box-shadow: 0 0 0 2px rgba(224, 195, 106, 0.15);
 }
 
-.thinking {
-  display: inline-block;
-  margin-left: 6px;
+.bot-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.bot-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at top, #2b7b55, #12412a);
+  border: 1px solid rgba(224, 195, 106, 0.6);
+  color: #f5e6b3;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+}
+
+.bot-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bot-name {
+  font-weight: 700;
+}
+
+.bot-stats {
+  font-size: 12px;
+  color: #d9c58f;
+  display: grid;
+  gap: 2px;
+}
+
+.bot-thinking {
+  font-size: 11px;
   color: #e0c36a;
+  letter-spacing: 0.04em;
   animation: pulse 1.2s infinite;
+}
+
+.badge {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  background: rgba(8, 20, 14, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 4px 6px;
+}
+
+.badge span {
+  font-size: 10px;
+  color: #cbb67a;
+  letter-spacing: 0.08em;
+}
+
+.badge strong {
+  font-size: 12px;
+  color: #f5e6b3;
 }
 
 @keyframes pulse {
@@ -335,13 +393,6 @@ body {
   100% {
     opacity: 0.2;
   }
-}
-
-.bot-stats {
-  font-size: 12px;
-  color: #d9c58f;
-  display: grid;
-  gap: 2px;
 }
 
 .log-panel {
