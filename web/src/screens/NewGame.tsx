@@ -4,16 +4,16 @@ export default function NewGame() {
   const navigate = useNavigate()
   return (
     <section className="panel">
-      <h1>New Game</h1>
-      <p>Rules preset: Classic (placeholder)</p>
+      <h1>Новая игра</h1>
+      <p>Набор правил: tisyacha.ru (по умолчанию)</p>
       <button
         className="primary"
         onClick={() => {
-          sessionStorage.setItem('startGame', 'classic')
+          sessionStorage.setItem('startGame', 'tisyacha')
           navigate('/table')
         }}
       >
-        Start
+        Начать
       </button>
     </section>
   )

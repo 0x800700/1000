@@ -22,6 +22,9 @@ type Containers = {
   effects: PIXI.Container
 }
 
+const CARD_SCALE = 110 / 140
+const CARD_W = 140 * CARD_SCALE
+
 export default function PixiTable({
   state,
   legalCardKeys,
@@ -126,7 +129,7 @@ export default function PixiTable({
     }
 
     prevRef.current = { hand, trick, phase: state?.round?.phase }
-  }, [state, legalCardKeys, onPlayCard])
+  }, [state, legalCardKeys, discardSelection, isDiscardPhase, onPlayCard, onToggleDiscard])
 
   return <div className="pixi-root" ref={containerRef} />
 }
@@ -135,6 +138,7 @@ function renderDeck(container: PIXI.Container, resolver: CardTextureFactory, pos
   container.removeChildren()
   const back = new PIXI.Sprite(resolver.getBackTexture())
   back.anchor.set(0.5)
+  back.scale.set(CARD_SCALE)
   back.x = pos.x
   back.y = pos.y
   container.addChild(back)
@@ -187,7 +191,7 @@ function renderHand(
     const cardContainer = new PIXI.Container()
     const sprite = new PIXI.Sprite(resolver.getCardTexture(card))
     sprite.anchor.set(0.5)
-    const baseScale = 110 / 140
+    const baseScale = CARD_SCALE
     sprite.scale.set(1)
 
     const isLegal = isDiscardPhase ? true : legal.has(cardKey(card))
@@ -254,7 +258,7 @@ function renderTrick(
     sprite.x = slots[i].x
     sprite.y = slots[i].y
     sprite.rotation = slots[i].rotation
-    sprite.scale.set(1.0)
+    sprite.scale.set(CARD_SCALE)
     sprite.alpha = 0
     container.addChild(sprite)
     tween(app, sprite, { alpha: 1 }, 140)
@@ -272,6 +276,7 @@ function renderTrickSlots(container: PIXI.Container, width: number, height: numb
     g.x = s.x
     g.y = s.y
     g.rotation = s.rotation
+    g.scale.set(CARD_SCALE)
     g.alpha = 0.6
     container.addChild(g)
   })
@@ -287,7 +292,7 @@ function renderTrumpBadge(container: PIXI.Container, trump: string | undefined, 
   badge.endFill()
   badge.x = width / 2 - 43
   badge.y = height / 2 - 120
-  const label = new PIXI.Text(`Trump ${suitGlyph(trump)}`, {
+  const label = new PIXI.Text(`Козырь: ${suitGlyph(trump)}`, {
     fontFamily: 'Georgia',
     fontSize: 16,
     fill: 0xf5e6b3
@@ -318,7 +323,7 @@ function animatePlay(
   sprite.anchor.set(0.5)
   sprite.x = from.x
   sprite.y = from.y
-  sprite.scale.set(1.05)
+  sprite.scale.set(CARD_SCALE * 1.05)
   effects.addChild(sprite)
   tween(app, sprite, { x: to.x, y: to.y, alpha: 0.2 }, 220, () => {
     effects.removeChild(sprite)
@@ -358,10 +363,11 @@ function trickPosition(trick: Card[], card: Card, width: number, height: number)
 }
 
 function trickSlots(count: number, center: { x: number; y: number }) {
+  const offset = CARD_W * 0.9
   const positions = [
-    { x: center.x - 96, y: center.y + 6, rotation: (-6 * Math.PI) / 180 },
+    { x: center.x - offset, y: center.y + 6, rotation: (-6 * Math.PI) / 180 },
     { x: center.x, y: center.y, rotation: 0 },
-    { x: center.x + 96, y: center.y + 6, rotation: (6 * Math.PI) / 180 }
+    { x: center.x + offset, y: center.y + 6, rotation: (6 * Math.PI) / 180 }
   ]
   if (count === 1) return [positions[1]]
   if (count === 2) return [positions[0], positions[2]]

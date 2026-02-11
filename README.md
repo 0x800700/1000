@@ -13,7 +13,14 @@ docker-compose up --build
 ```
 Open `http://localhost:8080`.
 
-## Run for Development
+## Run for Development (Docker, hot reload)
+```bash
+docker-compose -f docker-compose.dev.yml up
+```
+Backend: `http://localhost:8080`  
+Frontend (Vite): `http://localhost:5173`
+
+## Run for Development (local)
 Backend:
 ```bash
 go run ./cmd/server
@@ -47,5 +54,5 @@ go build ./cmd/server
 - `web`: React/TypeScript + PixiJS frontend
 
 ## Notes
-- Current MVP scaffolds the engine deal logic and a placeholder UI.
-- Rules are configurable via `ClassicPreset()` in `internal/engine`.
+- Rules are configurable; default preset is `TisyachaPreset()` in `internal/engine`.
+- Dev Docker uses bind mounts for fast iteration.

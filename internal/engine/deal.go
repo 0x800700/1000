@@ -28,7 +28,7 @@ func Shuffle(deck []Card, seed int64) []Card {
 func DealRound(g *GameState) {
 	deck := Shuffle(BuildDeck(g.Rules), g.Seed)
 	players := g.Rules.Players
-	handSize := g.Rules.HandSize
+	handSize := g.Rules.DealHandSize
 	kittySize := g.Rules.KittySize
 
 	if handSize*players+kittySize != len(deck) {
@@ -41,7 +41,6 @@ func DealRound(g *GameState) {
 		idx += handSize
 	}
 	g.Round.Kitty = append([]Card(nil), deck[idx:idx+kittySize]...)
-	g.Round.Discarded = nil
 	g.Round.HandsDealt = true
 	g.Round.Phase = PhaseBidding
 	g.Round.Bids = make(map[int]int)
@@ -49,4 +48,6 @@ func DealRound(g *GameState) {
 	g.Round.BidTurn = (g.Round.Dealer + 1) % players
 	g.Round.BidWinner = -1
 	g.Round.BidValue = 0
+	g.Round.DeclaredMarriages = make(map[int]map[Suit]bool)
+	g.Round.DeclaredAceMarriage = make(map[int]bool)
 }

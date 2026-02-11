@@ -71,9 +71,8 @@ const (
 	PhaseLobby Phase = iota
 	PhaseDeal
 	PhaseBidding
-	PhaseTrumpSelect
 	PhaseKittyTake
-	PhaseDiscard
+	PhaseSnos
 	PhasePlayTricks
 	PhaseScoreRound
 	PhaseGameOver
@@ -82,8 +81,10 @@ const (
 type Rules struct {
 	Players                int
 	DeckRanks              []Rank
-	HandSize               int
+	DealHandSize           int
+	PlayHandSize           int
 	KittySize              int
+	SnosCards              int
 	BidMin                 int
 	BidStep                int
 	MaxBid                 int
@@ -93,14 +94,29 @@ type Rules struct {
 	MustOverTrump          bool
 	ContractScoresAsBid    bool
 	ContractFailPenaltyBid bool
+	MarriageRequiresTrick  bool
+	AceMarriageEnabled     bool
+	BarrelThreshold        int
+	BarrelTarget           int
+	BarrelAttempts         int
+	BoltPenalty            int
+	BoltEvery              int
+	DumpThreshold          int
+	DumpNegativeThreshold  int
 }
 
 func ClassicPreset() Rules {
+	return TisyachaPreset()
+}
+
+func TisyachaPreset() Rules {
 	return Rules{
 		Players:                3,
 		DeckRanks:              []Rank{Rank9, RankJ, RankQ, RankK, Rank10, RankA},
-		HandSize:               7,
+		DealHandSize:           7,
+		PlayHandSize:           8,
 		KittySize:              3,
+		SnosCards:              2,
 		BidMin:                 80,
 		BidStep:                10,
 		MaxBid:                 300,
@@ -110,39 +126,64 @@ func ClassicPreset() Rules {
 		MustOverTrump:          false,
 		ContractScoresAsBid:    false,
 		ContractFailPenaltyBid: true,
+		MarriageRequiresTrick:  true,
+		AceMarriageEnabled:     false,
+		BarrelThreshold:        880,
+		BarrelTarget:           120,
+		BarrelAttempts:         3,
+		BoltPenalty:            120,
+		BoltEvery:              3,
+		DumpThreshold:          555,
+		DumpNegativeThreshold:  -555,
 	}
 }
 
 type PlayerState struct {
-	ID        int
-	Hand      []Card
-	Tricks    [][]Card
-	RoundPts  int
-	GameScore int
+	ID             int
+	Hand           []Card
+	Tricks         [][]Card
+	RoundPts       int
+	GameScore      int
+	MarriagePts    int
+	Bolts          int
+	OnBarrel       bool
+	BarrelAttempts int
 }
 
 type RoundState struct {
-	Phase      Phase
-	Dealer     int
-	Leader     int
-	Trump      *Suit
-	Kitty      []Card
-	Discarded  []Card
-	HandsDealt bool
-	Bids       map[int]int
-	Passed     map[int]bool
-	BidTurn    int
-	BidWinner  int
-	BidValue   int
-	TrickCards []Card
-	TrickOrder []int
+	Phase               Phase
+	Dealer              int
+	Leader              int
+	Trump               *Suit
+	Kitty               []Card
+	HandsDealt          bool
+	Bids                map[int]int
+	Passed              map[int]bool
+	BidTurn             int
+	BidWinner           int
+	BidValue            int
+	TrickCards          []Card
+	TrickOrder          []int
+	DeclaredMarriages   map[int]map[Suit]bool
+	DeclaredAceMarriage map[int]bool
 }
 
 type GameState struct {
-	Rules   Rules
-	Seed    int64
-	Round   RoundState
-	Players []PlayerState
+	Rules            Rules
+	Seed             int64
+	Round            RoundState
+	Players          []PlayerState
+	LastRoundPoints  []int
+	LastRoundEffects RoundEffects
+}
+
+type RoundEffects struct {
+	Bolts         []int
+	BoltPenalties []int
+	BarrelEnter   []int
+	BarrelExit    []int
+	BarrelPenalty []int
+	Dumped        []int
 }
 
 func NewGame(r Rules, seed int64) GameState {
@@ -171,5 +212,6 @@ func (g *GameState) ResetRound() {
 		g.Players[i].Hand = nil
 		g.Players[i].Tricks = nil
 		g.Players[i].RoundPts = 0
+		g.Players[i].MarriagePts = 0
 	}
 }

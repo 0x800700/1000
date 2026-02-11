@@ -25,10 +25,8 @@ func (b *EasyBot) ChooseAction(state engine.GameState, player int) engine.Action
 		return engine.Action{Type: engine.ActionPass}
 	}
 	switch state.Round.Phase {
-	case engine.PhaseDiscard:
-		return discardLowestPoints(state, player, state.Rules.KittySize)
-	case engine.PhaseTrumpSelect:
-		return chooseTrumpMostCards(state, player)
+	case engine.PhaseSnos:
+		return discardLowestPoints(state, player, state.Rules.SnosCards)
 	case engine.PhaseBidding:
 		return legal[b.RNG.Intn(len(legal))]
 	case engine.PhasePlayTricks:
@@ -50,10 +48,8 @@ func (b *NormalBot) ChooseAction(state engine.GameState, player int) engine.Acti
 	switch state.Round.Phase {
 	case engine.PhaseBidding:
 		return bidByHeuristic(state, player)
-	case engine.PhaseTrumpSelect:
-		return chooseTrumpMostCards(state, player)
-	case engine.PhaseDiscard:
-		return discardLowestPoints(state, player, state.Rules.KittySize)
+	case engine.PhaseSnos:
+		return discardLowestPoints(state, player, state.Rules.SnosCards)
 	case engine.PhasePlayTricks:
 		return playHeuristic(state, player)
 	default:
@@ -78,23 +74,7 @@ func discardLowestPoints(state engine.GameState, player int, count int) engine.A
 	if count > len(hand) {
 		count = len(hand)
 	}
-	return engine.Action{Type: engine.ActionDiscard, Cards: hand[:count]}
-}
-
-func chooseTrumpMostCards(state engine.GameState, player int) engine.Action {
-	counts := map[engine.Suit]int{}
-	for _, c := range state.Players[player].Hand {
-		counts[c.Suit]++
-	}
-	bestSuit := engine.SuitClubs
-	best := -1
-	for s, c := range counts {
-		if c > best {
-			best = c
-			bestSuit = s
-		}
-	}
-	return engine.Action{Type: engine.ActionChooseTrump, Suit: &bestSuit}
+	return engine.Action{Type: engine.ActionSnos, Cards: hand[:count]}
 }
 
 func bidByHeuristic(state engine.GameState, player int) engine.Action {

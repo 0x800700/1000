@@ -7,11 +7,11 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">Thousand</div>
+        <div className="brand">Тысяча</div>
         <nav className="nav">
-          <Link to="/">Home</Link>
-          <Link to="/new">New Game</Link>
-          <Link to="/table">Table</Link>
+          <Link to="/">Главная</Link>
+          <Link to="/new">Новая игра</Link>
+          <Link to="/table">Стол</Link>
         </nav>
       </header>
       <main className="content">

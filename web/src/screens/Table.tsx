@@ -15,7 +15,6 @@ export default function Table() {
   const [selectedBid, setSelectedBid] = useState<number | null>(null)
   const [showDebug, setShowDebug] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
-  const helpRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const client = connect((msg: ServerMessage) => {
@@ -26,8 +25,9 @@ export default function Table() {
         }
       }
       if (msg.type === 'error') {
-        setLog((prev) => [...prev, `Error: ${msg.error.message}`])
-        setLastError(msg.error.message)
+        const translated = translateError(msg.error?.message)
+        setLog((prev) => [...prev, `Ошибка: ${translated}`])
+        setLastError(translated)
       }
     }, (status) => {
       setWsStatus(status)
@@ -56,6 +56,17 @@ export default function Table() {
       }
     })
     return set
+  }, [state])
+
+  const marriageMap = useMemo(() => {
+    const map = new Map<string, string>()
+    if (!state) return map
+    state.legalActions.forEach((a) => {
+      if (a.type === 'play_card' && a.card && a.marriageSuit) {
+        map.set(cardKey(a.card), a.marriageSuit)
+      }
+    })
+    return map
   }, [state])
 
   const hand = state?.players[0].hand ?? []
@@ -89,6 +100,7 @@ export default function Table() {
   const currentTurn =
     state?.round.trickOrder?.[state?.round.trickCards?.length ?? 0] ?? state?.round.bidTurn ?? null
   const botThinking = (id: number) => currentTurn === id
+  const instruction = state ? phaseInstruction(state.round.phase) : 'Загрузка...'
 
   useEffect(() => {
     if (minNext !== null) {
@@ -124,40 +136,7 @@ export default function Table() {
     return () => window.removeEventListener('keydown', handler)
   }, [state, canPass, selectedBid, bidStep, bidValues, maxBid, minNext])
 
-  useEffect(() => {
-    if (!showHelp) return
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        setShowHelp(false)
-        return
-      }
-      if (e.key === 'Tab') {
-        const focusable = helpRef.current?.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-        if (!focusable || focusable.length === 0) return
-        const list = Array.from(focusable)
-        const first = list[0]
-        const last = list[list.length - 1]
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault()
-          last.focus()
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault()
-          first.focus()
-        }
-      }
-    }
-    window.addEventListener('keydown', handleKey)
-    const t = setTimeout(() => {
-      helpRef.current?.querySelector<HTMLElement>('button')?.focus()
-    }, 0)
-    return () => {
-      window.removeEventListener('keydown', handleKey)
-      clearTimeout(t)
-    }
-  }, [showHelp])
+  const connected = wsStatus.readyState === WebSocket.OPEN
 
   function autoAction() {
     if (!state) return
@@ -170,19 +149,17 @@ export default function Table() {
       }
       return
     }
-    if (phase === 'TrumpSelect') {
-      const handCounts = countSuits(hand)
-      const bestSuit = maxSuit(handCounts)
-      sendActionOnSocket({ type: 'choose_trump', suit: bestSuit })
-      return
-    }
-    if (phase === 'Discard') {
-      const count = state.rules.kittySize
+    if (phase === 'Snos') {
+      const count = state.rules.snosCards ?? 2
       const picked = pickLowestPoints(hand, count)
-      sendActionOnSocket({ type: 'discard', cards: picked })
+      sendActionOnSocket({ type: 'snos', cards: picked })
       return
     }
     if (phase === 'PlayTricks') {
+      if (hasAction('rospis')) {
+        sendActionOnSocket({ type: 'rospis' })
+        return
+      }
       const legal = legalActions
         .filter((a) => a.type === 'play_card' && a.card)
         .map((a) => a.card as Card)
@@ -196,122 +173,131 @@ export default function Table() {
 
   return (
     <section className="table-layout">
-      <div className="table-canvas">
-        <PixiTable
-          state={state}
-          legalCardKeys={legalCardKeys}
-          discardSelection={discardSelection}
-          isDiscardPhase={state?.round.phase === 'Discard'}
-          onPlayCard={(card) => sendActionOnSocket({ type: 'play_card', card })}
-          onToggleDiscard={(card) => toggleDiscard(card)}
-        />
-        {!state && (
-          <div className="loading">
-            <div>Loading...</div>
-            <button className="secondary" onClick={() => clientRef.current?.send({ type: 'request_state' })}>
-              Request state
-            </button>
-          </div>
-        )}
-        <div className="table-top">
+      <div className="main-col">
+        <div className="bot-row">
           <div className={`bot-panel left ${botThinking(1) ? 'is-thinking' : ''}`}>
             <div className="bot-header">
-              <div className="bot-avatar">A</div>
+              <div className="bot-avatar">А</div>
               <div className="bot-meta">
-                <div className="bot-name">Bot A</div>
-                {botThinking(1) && <div className="bot-thinking">thinking…</div>}
+                <div className="bot-name">Бот А</div>
+                {botThinking(1) && <div className="bot-thinking">думает…</div>}
               </div>
             </div>
             <div className="bot-stats">
               <div className="badge">
-                <span>BID</span>
+                <span>СТАВКА</span>
                 <strong>{state?.round.bids?.['1'] ?? '-'}</strong>
               </div>
               <div className="badge">
-                <span>CONTRACT</span>
+                <span>ЗАКАЗ</span>
                 <strong>{state?.round.bidWinner === 1 ? state?.round.bidValue : '-'}</strong>
               </div>
               <div className="badge">
-                <span>TRICKS</span>
+                <span>ВЗЯТКИ</span>
                 <strong>{state?.players?.[1]?.tricks ?? 0}</strong>
               </div>
               <div className="badge">
-                <span>SCORE</span>
+                <span>СЧЁТ</span>
                 <strong>{state?.players?.[1]?.gameScore ?? 0}</strong>
               </div>
             </div>
           </div>
           <div className={`bot-panel right ${botThinking(2) ? 'is-thinking' : ''}`}>
             <div className="bot-header">
-              <div className="bot-avatar">B</div>
+              <div className="bot-avatar">Б</div>
               <div className="bot-meta">
-                <div className="bot-name">Bot B</div>
-                {botThinking(2) && <div className="bot-thinking">thinking…</div>}
+                <div className="bot-name">Бот Б</div>
+                {botThinking(2) && <div className="bot-thinking">думает…</div>}
               </div>
             </div>
             <div className="bot-stats">
               <div className="badge">
-                <span>BID</span>
+                <span>СТАВКА</span>
                 <strong>{state?.round.bids?.['2'] ?? '-'}</strong>
               </div>
               <div className="badge">
-                <span>CONTRACT</span>
+                <span>ЗАКАЗ</span>
                 <strong>{state?.round.bidWinner === 2 ? state?.round.bidValue : '-'}</strong>
               </div>
               <div className="badge">
-                <span>TRICKS</span>
+                <span>ВЗЯТКИ</span>
                 <strong>{state?.players?.[2]?.tricks ?? 0}</strong>
               </div>
               <div className="badge">
-                <span>SCORE</span>
+                <span>СЧЁТ</span>
                 <strong>{state?.players?.[2]?.gameScore ?? 0}</strong>
               </div>
             </div>
           </div>
         </div>
-        <div className="action-panel">
+        <div className="pixi-surface">
+          <PixiTable
+            state={state}
+            legalCardKeys={legalCardKeys}
+            discardSelection={discardSelection}
+            isDiscardPhase={state?.round.phase === 'Snos'}
+            onPlayCard={(card) =>
+              sendActionOnSocket({
+                type: 'play_card',
+                card,
+                marriageSuit: marriageMap.get(cardKey(card))
+              })
+            }
+            onToggleDiscard={(card) => toggleDiscard(card)}
+          />
+        </div>
+        <div className="action-bar">
+          <div className="instruction">{instruction}</div>
           <div className="action-status">
-            Connection: {readyStateLabel(wsStatus.readyState) === 'OPEN' ? 'Connected' : 'Disconnected'} • Phase:{' '}
-            {state?.round.phase ?? '-'} • Turn:{' '}
-            {state?.round.trickOrder?.[state?.round.trickCards?.length ?? 0] ?? state?.round.bidTurn ?? '-'}
+            {connected ? 'Подключено' : 'Отключено'} • Фаза: {phaseLabel(state?.round.phase)} • Ход игрока:{' '}
+            {state
+              ? state.round.trickOrder?.[state.round.trickCards?.length ?? 0] ?? state.round.bidTurn ?? '-'
+              : '-'}
           </div>
           {lastError && <div className="status-error">{lastError}</div>}
           <div className="action-row">
-            <button className="secondary" onClick={() => setShowHelp(true)}>
-              Help
+            <button className="secondary" onClick={() => setShowHelp((v) => !v)}>
+              {showHelp ? 'Скрыть правила' : 'Правила'}
             </button>
+            <button className="secondary" disabled={!canAct} onClick={autoAction}>
+              Авто
+            </button>
+            {!state && (
+              <button className="secondary" onClick={() => clientRef.current?.send({ type: 'request_state' })}>
+                Запросить состояние
+              </button>
+            )}
           </div>
           {import.meta.env.DEV && (
             <button className="secondary ghost" onClick={() => setShowDebug((v) => !v)}>
-              {showDebug ? 'Hide debug' : 'Show debug'}
+              {showDebug ? 'Скрыть отладку' : 'Показать отладку'}
             </button>
           )}
           {showDebug && (
             <div className="debug">
-              <div>WS: {readyStateLabel(wsStatus.readyState)}</div>
-              <div>Session: {state?.meta.sessionId ?? '-'}</div>
-              <div>Player: {state?.meta.playerId ?? 0}</div>
+              <div>Связь: {readyStateLabel(wsStatus.readyState)}</div>
+              <div>Сессия: {state?.meta.sessionId ?? '-'}</div>
+              <div>Игрок: {state?.meta.playerId ?? 0}</div>
             </div>
           )}
           {state?.round.phase === 'Bidding' && (
             <div className="bid-panel">
-              <div className="instruction">Bidding: choose a bid or Pass</div>
               <div className="bid-info">
-                <div>Highest: {currentHighest || '-'}</div>
-                <div>Selected: {selectedBid ?? '-'}</div>
-                <div>Min next: {minNext ?? '-'}</div>
-                <div>Step: {bidStep}</div>
+                <div>Текущая ставка: {currentHighest || '-'}</div>
+                <div>Ваша ставка: {selectedBid ?? '-'}</div>
+                <div>Мин следующая: {minNext ?? '-'}</div>
+                <div>Шаг: {bidStep}</div>
               </div>
               <div className="bid-actions">
                 <button className="primary big" disabled={!canPass} onClick={() => sendActionOnSocket({ type: 'pass' })}>
-                  Pass
+                  Пас
                 </button>
                 <button
                   className="primary big"
                   disabled={!canBid(selectedBid)}
                   onClick={() => selectedBid && sendActionOnSocket({ type: 'bid', bid: selectedBid })}
                 >
-                  Bid
+                  Ставка
                 </button>
                 <button
                   className="secondary"
@@ -336,128 +322,90 @@ export default function Table() {
                   +50
                 </button>
                 <button className="secondary" disabled={maxBid === null} onClick={() => setSelectedBid(maxBid)}>
-                  Max
-                </button>
-                <button className="secondary" disabled={!canAct} onClick={autoAction}>
-                  Auto
+                  Макс
                 </button>
               </div>
             </div>
           )}
-          {state?.round.phase === 'TrumpSelect' && (
-            <div className="action-row">
-              <div className="instruction">Select trump</div>
-              {(['C', 'D', 'H', 'S'] as const).map((s) => (
-                <button
-                  key={s}
-                  className="primary"
-                  disabled={!hasAction('choose_trump')}
-                  onClick={() => sendActionOnSocket({ type: 'choose_trump', suit: s })}
-                >
-                  Trump {s}
-                </button>
-              ))}
-              <button className="secondary" disabled={!canAct} onClick={autoAction}>
-                Auto
-              </button>
-            </div>
-          )}
           {state?.round.phase === 'KittyTake' && (
             <div className="action-row">
-              <div className="instruction">Take kitty</div>
               <button
                 className="primary"
                 disabled={!hasAction('take_kitty')}
                 onClick={() => sendActionOnSocket({ type: 'take_kitty' })}
               >
-                Take Kitty
-              </button>
-              <button className="secondary" disabled={!canAct} onClick={autoAction}>
-                Auto
+                Взять прикуп
               </button>
             </div>
           )}
-          {state?.round.phase === 'Discard' && (
+          {state?.round.phase === 'Snos' && (
             <div className="action-row">
-              <div className="instruction">Discard {state?.rules.kittySize ?? 3} cards</div>
               <button
                 className="primary"
                 disabled={
-                  discardSelection.length !== (state?.rules.kittySize ?? 3) ||
-                  !hasAction('discard')
+                  discardSelection.length !== (state?.rules.snosCards ?? 2) ||
+                  !hasAction('snos')
                 }
                 onClick={() => {
-                  sendActionOnSocket({ type: 'discard', cards: discardSelection })
+                  sendActionOnSocket({ type: 'snos', cards: discardSelection })
                   setDiscardSelection([])
                 }}
               >
-                Discard {state?.rules.kittySize ?? 3}
-              </button>
-              <button className="secondary" disabled={!canAct} onClick={autoAction}>
-                Auto
+                Снос
               </button>
             </div>
           )}
           {state?.round.phase === 'PlayTricks' && (
             <div className="action-row">
-              <div className="instruction">Play a card</div>
-              <button className="secondary" disabled={!canAct} onClick={autoAction}>
-                Auto
-              </button>
+              {hasAction('rospis') && (
+                <button className="secondary" onClick={() => sendActionOnSocket({ type: 'rospis' })}>
+                  Роспись
+                </button>
+              )}
             </div>
           )}
         </div>
-        <div className="hand-fan" />
-        {showHelp && (
-          <div className="modal" onClick={() => setShowHelp(false)}>
-            <div
-              className="modal-content"
-              ref={helpRef}
-              role="dialog"
-              aria-modal="true"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3>How to Play</h3>
-              <div className="help-phase">{phaseHelp(state?.round.phase)}</div>
-              <p>
-                <strong>Phases:</strong> Bidding → Choose trump → Take kitty → Discard → Play tricks → Score.
-              </p>
-              <ul className="help-list">
-                <li>Bidding: choose a bid or Pass. Highest bid wins the contract.</li>
-                <li>Trump: contract player chooses the trump suit.</li>
-                <li>Kitty: contract player takes 3 cards, then discards 3 back to 7.</li>
-                <li>Play: follow suit if you can. Win tricks to earn points.</li>
-              </ul>
-              <p>
-                <strong>Bid</strong> = your promised points. <strong>Contract</strong> = winning bid.{' '}
-                <strong>Tricks</strong> = rounds you won. <strong>Score</strong> = total points.
-              </p>
-              <p>
-                Need help? Tap <strong>Auto</strong> to let the game play a reasonable move.
-              </p>
-              <div className="modal-actions">
-                <button className="primary" onClick={() => setShowHelp(false)}>
-                  Got it
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
       <aside className="side-panel log-panel">
-        <h2>Event Log</h2>
-        {state && (
-          <div className="info">
-            <div>Phase: {state.round.phase}</div>
-            <div>Bid: {state.round.bidValue || '-'}</div>
-            <div>Trump: {state.round.trump ?? '-'}</div>
+        {showHelp ? (
+          <div className="help-panel">
+            <h2>Правила</h2>
+            <div className="help-phase">{phaseHelp(state?.round.phase)}</div>
+            <p>
+              <strong>Цель:</strong> первым набрать 1000 очков взятками и марьяжами.
+            </p>
+            <ul className="help-list">
+              <li>Торги: выбирайте ставку или Пас.</li>
+              <li>Прикуп: победитель торгов берёт 3 карты.</li>
+              <li>Снос: отдайте по одной карте каждому сопернику.</li>
+              <li>Ход: следуйте масти, если есть.</li>
+              <li>Марьяж: Дама+Король одной масти, даёт очки и делает масть козырем.</li>
+              <li>Роспись: можно объявить до первого хода.</li>
+              <li>Болт: если не взяли ни одной взятки.</li>
+              <li>Бочка и самосвал считаются автоматически по очкам.</li>
+            </ul>
+            <p>
+              <strong>Ставка</strong> — заказ очков. <strong>Взятки</strong> — количество выигранных взяток.
+            </p>
+            <p>Нужна помощь? Нажмите <strong>Авто</strong>.</p>
           </div>
+        ) : (
+          <>
+            <h2>Журнал событий</h2>
+            {state && (
+              <div className="info">
+                <div>Фаза: {phaseLabel(state.round.phase)}</div>
+                <div>Ставка: {state.round.bidValue || '-'}</div>
+                <div>Козырь: {state.round.trump ? suitGlyph(state.round.trump) : '-'}</div>
+              </div>
+            )}
+            <ul className="log scroll">
+              {log.slice(-20).map((item, idx) => (
+                <li key={`${item}-${idx}`}>{item}</li>
+              ))}
+            </ul>
+          </>
         )}
-        <ul className="log scroll">
-          {log.slice(-10).map((item, idx) => (
-            <li key={`${item}-${idx}`}>{item}</li>
-          ))}
-        </ul>
       </aside>
     </section>
   )
@@ -470,36 +418,16 @@ function cardKey(c: Card) {
 function readyStateLabel(state: number) {
   switch (state) {
     case WebSocket.CONNECTING:
-      return 'CONNECTING'
+      return 'Подключение'
     case WebSocket.OPEN:
-      return 'OPEN'
+      return 'Открыто'
     case WebSocket.CLOSING:
-      return 'CLOSING'
+      return 'Закрывается'
     case WebSocket.CLOSED:
-      return 'CLOSED'
+      return 'Закрыто'
     default:
       return String(state)
   }
-}
-
-function countSuits(cards: Card[]) {
-  const counts: Record<string, number> = { C: 0, D: 0, H: 0, S: 0 }
-  cards.forEach((c) => {
-    counts[c.suit] = (counts[c.suit] ?? 0) + 1
-  })
-  return counts
-}
-
-function maxSuit(counts: Record<string, number>): 'C' | 'D' | 'H' | 'S' {
-  let best: 'C' | 'D' | 'H' | 'S' = 'C'
-  let bestVal = -1
-  ;(['C', 'D', 'H', 'S'] as const).forEach((s) => {
-    if (counts[s] > bestVal) {
-      bestVal = counts[s]
-      best = s
-    }
-  })
-  return best
 }
 
 function pickLowestPoints(cards: Card[], count: number) {
@@ -532,46 +460,137 @@ function formatEvent(e: any) {
   const p = e.data?.player
   switch (e.type) {
     case 'bid_made':
-      return `Player ${p} bid ${e.data?.bid}`
+      return `Игрок ${p} поставил ${e.data?.bid}`
     case 'bid_passed':
-      return `Player ${p} passed`
-    case 'trump_chosen':
-      return `Player ${p} chose trump ${e.data?.suit}`
+      return `Игрок ${p} пас`
     case 'kitty_taken':
-      return `Player ${p} took kitty`
-    case 'discarded':
-      return `Player ${p} discarded`
+      return `Игрок ${p} взял прикуп`
+    case 'snos_made':
+      return formatSnos(p, e.data?.transfers ?? [])
+    case 'marriage_declared':
+      return `Игрок ${p} объявил марьяж ${suitGlyph(e.data?.suit)} (+${e.data?.value ?? 0})`
+    case 'ace_marriage_declared':
+      return `Игрок ${p} объявил тузовый марьяж (+${e.data?.value ?? 200})`
     case 'card_played':
-      return `Player ${p} played ${formatCard(e.data?.cards?.[0])}`
+      return `Игрок ${p} сыграл ${formatCard(e.data?.cards?.[0])}`
     case 'trick_won':
-      return `Player ${p} won the trick`
+      return `Взятку забрал игрок ${p} (+${e.data?.value ?? 0})`
     case 'round_scored':
-      return `Round scored: ${e.data?.points?.join(', ')}`
+      return formatRoundScore(e.data?.points ?? [])
+    case 'rospis_declared':
+      return `Игрок ${p} объявил роспись`
+    case 'bolt_awarded':
+      return `Игрок ${p} получил болт`
+    case 'bolt_penalty':
+      return `Игрок ${p} получил штраф за болты (-${e.data?.value ?? 0})`
+    case 'barrel_enter':
+      return `Игрок ${p} сел на бочку`
+    case 'barrel_exit':
+      return `Игрок ${p} сошёл с бочки`
+    case 'barrel_penalty':
+      return `Игрок ${p} получил штраф за бочку (-${e.data?.value ?? 0})`
+    case 'dump_reset':
+      return `Игрок ${p} попал на самосвал — счёт обнулён`
     default:
-      return e.type
+      return 'Неизвестное событие'
   }
 }
 
 function formatCard(card?: { rank: string; suit: string }) {
   if (!card) return ''
-  return `${card.rank}${card.suit}`
+  return `${rankLabel(card.rank)}${suitGlyph(card.suit)}`
+}
+
+function suitGlyph(suit?: string) {
+  switch (suit) {
+    case 'H':
+      return '♥'
+    case 'D':
+      return '♦'
+    case 'C':
+      return '♣'
+    case 'S':
+      return '♠'
+    default:
+      return suit ?? ''
+  }
+}
+
+function rankLabel(rank?: string) {
+  return rank ?? ''
+}
+
+function phaseLabel(phase?: string) {
+  switch (phase) {
+    case 'Bidding':
+      return 'Торги'
+    case 'KittyTake':
+      return 'Прикуп'
+    case 'Snos':
+      return 'Снос'
+    case 'PlayTricks':
+      return 'Ход'
+    case 'ScoreRound':
+      return 'Подсчёт'
+    case 'GameOver':
+      return 'Игра окончена'
+    default:
+      return 'Неизвестно'
+  }
 }
 
 function phaseHelp(phase?: string) {
   switch (phase) {
     case 'Bidding':
-      return 'Bidding: choose a bid or pass. Highest bid wins the contract.'
-    case 'TrumpSelect':
-      return 'Choose the trump suit for this round.'
+      return 'Торги: выберите ставку или Пас.'
     case 'KittyTake':
-      return 'Take the kitty to improve your hand.'
-    case 'Discard':
-      return 'Discard 3 cards to return to 7 cards.'
+      return 'Прикуп: возьмите 3 карты.'
+    case 'Snos':
+      return 'Снос: отдайте по одной карте каждому сопернику.'
     case 'PlayTricks':
-      return 'Play a card. Follow suit if you can.'
+      return 'Ход: выберите карту, следуйте масти.'
     case 'ScoreRound':
-      return 'Scoring: points are counted for each player.'
+      return 'Подсчёт: очки начисляются за взятки и марьяжи.'
     default:
-      return 'Follow the prompts below to continue.'
+      return 'Следуйте подсказкам внизу.'
   }
+}
+
+function phaseInstruction(phase?: string) {
+  switch (phase) {
+    case 'Bidding':
+      return 'Торги: выберите ставку или Пас'
+    case 'KittyTake':
+      return 'Прикуп: возьмите карты'
+    case 'Snos':
+      return 'Снос: отдайте по одной карте каждому сопернику'
+    case 'PlayTricks':
+      return 'Ход: выберите подсвеченную карту'
+    case 'ScoreRound':
+      return 'Подсчёт кона'
+    case 'GameOver':
+      return 'Игра окончена'
+    default:
+      return 'Ожидание'
+  }
+}
+
+function formatSnos(player: number, transfers: Array<{ to: number; card: { rank: string; suit: string } }>) {
+  if (!transfers || transfers.length === 0) {
+    return `Игрок ${player} сделал снос`
+  }
+  const parts = transfers.map((t) => `${formatCard(t.card)} игроку ${t.to}`)
+  return `Игрок ${player} сделал снос: отдал ${parts.join(' и ')}`
+}
+
+function formatRoundScore(points: number[]) {
+  if (!points || points.length === 0) return 'Итог кона: очки не рассчитаны'
+  const parts = points.map((p, idx) => `игрок ${idx}: ${p}`)
+  return `Итог кона: ${parts.join(', ')}`
+}
+
+function translateError(message?: string) {
+  if (!message) return 'Неизвестная ошибка'
+  if (/[A-Za-z]/.test(message)) return 'Произошла ошибка'
+  return message
 }

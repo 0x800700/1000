@@ -12,6 +12,7 @@ export type ActionDTO = {
   suit?: Suit
   card?: Card
   cards?: Card[]
+  marriageSuit?: Suit
 }
 
 export type PlayerView = {
@@ -42,11 +43,13 @@ export type GameView = {
   players: PlayerView[]
   round: RoundView
   rules: {
-    handSize: number
+    dealHandSize: number
+    playHandSize: number
     kittySize: number
     bidMin: number
     bidStep: number
     maxBid: number
+    snosCards: number
   }
   legalActions: ActionDTO[]
   meta: {

@@ -12,11 +12,12 @@ type CardDTO struct {
 }
 
 type ActionDTO struct {
-	Type  string    `json:"type"`
-	Bid   int       `json:"bid,omitempty"`
-	Suit  string    `json:"suit,omitempty"`
-	Card  *CardDTO  `json:"card,omitempty"`
-	Cards []CardDTO `json:"cards,omitempty"`
+	Type         string    `json:"type"`
+	Bid          int       `json:"bid,omitempty"`
+	Suit         string    `json:"suit,omitempty"`
+	Card         *CardDTO  `json:"card,omitempty"`
+	Cards        []CardDTO `json:"cards,omitempty"`
+	MarriageSuit string    `json:"marriageSuit,omitempty"`
 }
 
 func (a *ActionDTO) ToEngine() (engine.Action, error) {
@@ -28,17 +29,11 @@ func (a *ActionDTO) ToEngine() (engine.Action, error) {
 		return engine.Action{Type: engine.ActionBid, Bid: a.Bid}, nil
 	case "pass":
 		return engine.Action{Type: engine.ActionPass}, nil
-	case "choose_trump":
-		s, err := parseSuit(a.Suit)
-		if err != nil {
-			return engine.Action{}, err
-		}
-		return engine.Action{Type: engine.ActionChooseTrump, Suit: &s}, nil
 	case "take_kitty":
 		return engine.Action{Type: engine.ActionTakeKitty}, nil
-	case "discard":
+	case "snos":
 		if len(a.Cards) == 0 {
-			return engine.Action{}, errors.New("discard cards required")
+			return engine.Action{}, errors.New("snos cards required")
 		}
 		cards := make([]engine.Card, 0, len(a.Cards))
 		for _, c := range a.Cards {
@@ -48,7 +43,7 @@ func (a *ActionDTO) ToEngine() (engine.Action, error) {
 			}
 			cards = append(cards, card)
 		}
-		return engine.Action{Type: engine.ActionDiscard, Cards: cards}, nil
+		return engine.Action{Type: engine.ActionSnos, Cards: cards}, nil
 	case "play_card":
 		if a.Card == nil {
 			return engine.Action{}, errors.New("card required")
@@ -57,7 +52,17 @@ func (a *ActionDTO) ToEngine() (engine.Action, error) {
 		if err != nil {
 			return engine.Action{}, err
 		}
-		return engine.Action{Type: engine.ActionPlayCard, Card: &card}, nil
+		var marriage *engine.Suit
+		if a.MarriageSuit != "" {
+			s, err := parseSuit(a.MarriageSuit)
+			if err != nil {
+				return engine.Action{}, err
+			}
+			marriage = &s
+		}
+		return engine.Action{Type: engine.ActionPlayCard, Card: &card, MarriageSuit: marriage}, nil
+	case "rospis":
+		return engine.Action{Type: engine.ActionRospis}, nil
 	default:
 		return engine.Action{}, errors.New("unknown action type")
 	}
@@ -69,25 +74,26 @@ func ActionFromEngine(a engine.Action) ActionDTO {
 		return ActionDTO{Type: "bid", Bid: a.Bid}
 	case engine.ActionPass:
 		return ActionDTO{Type: "pass"}
-	case engine.ActionChooseTrump:
-		if a.Suit == nil {
-			return ActionDTO{Type: "choose_trump"}
-		}
-		return ActionDTO{Type: "choose_trump", Suit: suitToString(*a.Suit)}
 	case engine.ActionTakeKitty:
 		return ActionDTO{Type: "take_kitty"}
-	case engine.ActionDiscard:
+	case engine.ActionSnos:
 		cards := make([]CardDTO, 0, len(a.Cards))
 		for _, c := range a.Cards {
 			cards = append(cards, cardToDTO(c))
 		}
-		return ActionDTO{Type: "discard", Cards: cards}
+		return ActionDTO{Type: "snos", Cards: cards}
 	case engine.ActionPlayCard:
 		if a.Card == nil {
 			return ActionDTO{Type: "play_card"}
 		}
 		card := cardToDTO(*a.Card)
-		return ActionDTO{Type: "play_card", Card: &card}
+		out := ActionDTO{Type: "play_card", Card: &card}
+		if a.MarriageSuit != nil {
+			out.MarriageSuit = suitToString(*a.MarriageSuit)
+		}
+		return out
+	case engine.ActionRospis:
+		return ActionDTO{Type: "rospis"}
 	default:
 		return ActionDTO{Type: "unknown"}
 	}

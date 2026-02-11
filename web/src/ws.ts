@@ -28,7 +28,7 @@ export function connect(
 
   ws.addEventListener('open', () => notify())
   ws.addEventListener('close', () => notify())
-  ws.addEventListener('error', () => notify('WebSocket error'))
+  ws.addEventListener('error', () => notify('Ошибка соединения'))
   ws.onmessage = (ev) => {
     const msg = JSON.parse(ev.data) as ServerMessage
     log('in', msg)

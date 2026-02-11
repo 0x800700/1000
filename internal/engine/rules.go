@@ -48,6 +48,21 @@ func CardPoints(r Rank) int {
 	return cardPoints(r)
 }
 
+func marriageValue(s Suit) int {
+	switch s {
+	case SuitHearts:
+		return 100
+	case SuitDiamonds:
+		return 80
+	case SuitClubs:
+		return 60
+	case SuitSpades:
+		return 40
+	default:
+		return 0
+	}
+}
+
 func trickWinner(order []int, cards []Card, trump *Suit) int {
 	if len(order) == 0 || len(cards) == 0 {
 		return -1
@@ -83,6 +98,8 @@ func trickWinner(order []int, cards []Card, trump *Suit) int {
 }
 
 func scoreRound(g *GameState) {
+	g.LastRoundEffects = RoundEffects{}
+	g.LastRoundPoints = make([]int, len(g.Players))
 	for i := range g.Players {
 		g.Players[i].RoundPts = 0
 		for _, trick := range g.Players[i].Tricks {
@@ -90,6 +107,8 @@ func scoreRound(g *GameState) {
 				g.Players[i].RoundPts += cardPoints(c.Rank)
 			}
 		}
+		g.Players[i].RoundPts += g.Players[i].MarriagePts
+		g.LastRoundPoints[i] = g.Players[i].RoundPts
 	}
 
 	contract := g.Round.BidWinner
@@ -119,6 +138,71 @@ func scoreRound(g *GameState) {
 			continue
 		}
 		g.Players[i].GameScore += g.Players[i].RoundPts
+	}
+
+	// Bolts
+	for i := range g.Players {
+		if len(g.Players[i].Tricks) == 0 {
+			g.Players[i].Bolts++
+			g.LastRoundEffects.Bolts = append(g.LastRoundEffects.Bolts, i)
+			if g.Players[i].Bolts >= g.Rules.BoltEvery {
+				g.Players[i].GameScore -= g.Rules.BoltPenalty
+				g.Players[i].Bolts = 0
+				g.LastRoundEffects.BoltPenalties = append(g.LastRoundEffects.BoltPenalties, i)
+			}
+		}
+	}
+
+	// Barrel handling
+	prevBarrel := make([]bool, len(g.Players))
+	barrelOwner := -1
+	for i := range g.Players {
+		prevBarrel[i] = g.Players[i].OnBarrel
+		if g.Players[i].OnBarrel {
+			barrelOwner = i
+			break
+		}
+	}
+	for i := range g.Players {
+		if g.Players[i].GameScore >= g.Rules.BarrelThreshold && i != barrelOwner {
+			if barrelOwner >= 0 {
+				g.Players[barrelOwner].OnBarrel = false
+				g.Players[barrelOwner].BarrelAttempts = 0
+			}
+			g.Players[i].OnBarrel = true
+			g.Players[i].BarrelAttempts = 0
+			barrelOwner = i
+		}
+	}
+	if barrelOwner >= 0 {
+		if g.Players[barrelOwner].RoundPts >= g.Rules.BarrelTarget {
+			g.Players[barrelOwner].OnBarrel = false
+			g.Players[barrelOwner].BarrelAttempts = 0
+		} else {
+			g.Players[barrelOwner].BarrelAttempts++
+			if g.Players[barrelOwner].BarrelAttempts >= g.Rules.BarrelAttempts {
+				g.Players[barrelOwner].GameScore -= g.Rules.BoltPenalty
+				g.Players[barrelOwner].OnBarrel = false
+				g.Players[barrelOwner].BarrelAttempts = 0
+				g.LastRoundEffects.BarrelPenalty = append(g.LastRoundEffects.BarrelPenalty, barrelOwner)
+			}
+		}
+	}
+	for i := range g.Players {
+		if !prevBarrel[i] && g.Players[i].OnBarrel {
+			g.LastRoundEffects.BarrelEnter = append(g.LastRoundEffects.BarrelEnter, i)
+		}
+		if prevBarrel[i] && !g.Players[i].OnBarrel {
+			g.LastRoundEffects.BarrelExit = append(g.LastRoundEffects.BarrelExit, i)
+		}
+	}
+
+	// Dump (reset to 0)
+	for i := range g.Players {
+		if g.Players[i].GameScore >= g.Rules.DumpThreshold || g.Players[i].GameScore <= g.Rules.DumpNegativeThreshold {
+			g.Players[i].GameScore = 0
+			g.LastRoundEffects.Dumped = append(g.LastRoundEffects.Dumped, i)
+		}
 	}
 
 	for _, p := range g.Players {

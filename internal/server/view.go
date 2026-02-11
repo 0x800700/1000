@@ -35,11 +35,13 @@ type GameView struct {
 }
 
 type RulesView struct {
-	HandSize  int `json:"handSize"`
-	KittySize int `json:"kittySize"`
-	BidMin    int `json:"bidMin"`
-	BidStep   int `json:"bidStep"`
-	MaxBid    int `json:"maxBid"`
+	DealHandSize int `json:"dealHandSize"`
+	PlayHandSize int `json:"playHandSize"`
+	KittySize    int `json:"kittySize"`
+	BidMin       int `json:"bidMin"`
+	BidStep      int `json:"bidStep"`
+	MaxBid       int `json:"maxBid"`
+	SnosCards    int `json:"snosCards"`
 }
 
 type MetaView struct {
@@ -94,11 +96,13 @@ func BuildGameView(g engine.GameState, viewer int, sessionID string) *GameView {
 			TrickOrder: g.Round.TrickOrder,
 		},
 		Rules: RulesView{
-			HandSize:  g.Rules.HandSize,
-			KittySize: g.Rules.KittySize,
-			BidMin:    g.Rules.BidMin,
-			BidStep:   g.Rules.BidStep,
-			MaxBid:    g.Rules.MaxBid,
+			DealHandSize: g.Rules.DealHandSize,
+			PlayHandSize: g.Rules.PlayHandSize,
+			KittySize:    g.Rules.KittySize,
+			BidMin:       g.Rules.BidMin,
+			BidStep:      g.Rules.BidStep,
+			MaxBid:       g.Rules.MaxBid,
+			SnosCards:    g.Rules.SnosCards,
 		},
 		LegalActions: legal,
 		Meta: MetaView{
@@ -116,12 +120,10 @@ func phaseToString(p engine.Phase) string {
 		return "Deal"
 	case engine.PhaseBidding:
 		return "Bidding"
-	case engine.PhaseTrumpSelect:
-		return "TrumpSelect"
 	case engine.PhaseKittyTake:
 		return "KittyTake"
-	case engine.PhaseDiscard:
-		return "Discard"
+	case engine.PhaseSnos:
+		return "Snos"
 	case engine.PhasePlayTricks:
 		return "PlayTricks"
 	case engine.PhaseScoreRound:

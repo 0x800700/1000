@@ -16,7 +16,7 @@ type ActionRecord struct {
 }
 
 func RunSelfPlayRounds(seed int64, rounds int, maxStepsPerRound int) error {
-	rules := engine.ClassicPreset()
+	rules := engine.TisyachaPreset()
 	state := engine.NewGame(rules, seed)
 
 	for r := 0; r < rounds; r++ {
@@ -60,7 +60,7 @@ func RunSelfPlayRounds(seed int64, rounds int, maxStepsPerRound int) error {
 
 func chooseAction(state engine.GameState, player int, legal []engine.Action) engine.Action {
 	switch state.Round.Phase {
-	case engine.PhaseDiscard:
+	case engine.PhaseSnos:
 		return discardLowest(state, player)
 	case engine.PhasePlayTricks:
 		return lowestLegalPlay(legal)
@@ -82,11 +82,11 @@ func discardLowest(state engine.GameState, player int) engine.Action {
 		}
 		return pi < pj
 	})
-	count := state.Rules.KittySize
+	count := state.Rules.SnosCards
 	if count > len(hand) {
 		count = len(hand)
 	}
-	return engine.Action{Type: engine.ActionDiscard, Cards: hand[:count]}
+	return engine.Action{Type: engine.ActionSnos, Cards: hand[:count]}
 }
 
 func lowestLegalPlay(legal []engine.Action) engine.Action {
@@ -111,20 +111,17 @@ func actionKey(a engine.Action) string {
 		return fmt.Sprintf("1_bid_%04d", a.Bid)
 	case engine.ActionPass:
 		return "0_pass"
-	case engine.ActionChooseTrump:
-		if a.Suit == nil {
-			return "2_trump_?"
-		}
-		return fmt.Sprintf("2_trump_%d", *a.Suit)
 	case engine.ActionTakeKitty:
 		return "3_take"
-	case engine.ActionDiscard:
-		return "4_discard"
+	case engine.ActionSnos:
+		return "4_snos"
 	case engine.ActionPlayCard:
 		if a.Card == nil {
 			return "5_play_?"
 		}
 		return fmt.Sprintf("5_play_%d_%d", a.Card.Suit, a.Card.Rank)
+	case engine.ActionRospis:
+		return "6_rospis"
 	default:
 		return "9_unknown"
 	}
@@ -135,7 +132,8 @@ func checkInvariants(state engine.GameState) error {
 		return nil
 	}
 	total, dup := countCards(state)
-	if total != 24 {
+	expected := len(engine.BuildDeck(state.Rules))
+	if total != expected {
 		return fmt.Errorf("card count mismatch: %d", total)
 	}
 	if dup {
@@ -144,41 +142,67 @@ func checkInvariants(state engine.GameState) error {
 	if len(state.Round.TrickCards) > 3 {
 		return fmt.Errorf("invalid trick size: %d", len(state.Round.TrickCards))
 	}
-	switch state.Round.Phase {
-	case engine.PhaseBidding, engine.PhaseTrumpSelect, engine.PhaseKittyTake:
-		if len(state.Round.Discarded) != 0 {
-			return fmt.Errorf("discarded not empty before discard: %d", len(state.Round.Discarded))
+	if state.Round.Phase == engine.PhaseBidding || state.Round.Phase == engine.PhaseKittyTake {
+		for _, p := range state.Players {
+			if len(p.Hand) != state.Rules.DealHandSize {
+				return fmt.Errorf("hand size mismatch in bidding: %d", len(p.Hand))
+			}
 		}
-	case engine.PhaseDiscard, engine.PhasePlayTricks, engine.PhaseScoreRound, engine.PhaseGameOver:
-		if len(state.Round.Discarded) != state.Rules.KittySize {
-			return fmt.Errorf("discarded size mismatch: %d", len(state.Round.Discarded))
+		if len(state.Round.Kitty) != state.Rules.KittySize {
+			return fmt.Errorf("kitty size mismatch in bidding: %d", len(state.Round.Kitty))
 		}
 	}
-	if state.Round.Phase == engine.PhaseDiscard {
-		if len(state.Players[state.Round.BidWinner].Hand) != state.Rules.HandSize+state.Rules.KittySize {
+	if state.Round.Phase == engine.PhaseSnos {
+		if len(state.Players[state.Round.BidWinner].Hand) != state.Rules.DealHandSize+state.Rules.KittySize {
 			return fmt.Errorf("bidder hand not expanded after kitty")
+		}
+		if len(state.Round.Kitty) != 0 {
+			return fmt.Errorf("kitty should be empty after take")
+		}
+		for i, p := range state.Players {
+			if i == state.Round.BidWinner {
+				continue
+			}
+			if len(p.Hand) != state.Rules.DealHandSize {
+				return fmt.Errorf("opponent hand size mismatch in snos: %d", len(p.Hand))
+			}
 		}
 	}
 	if state.Round.Phase == engine.PhasePlayTricks {
 		for _, p := range state.Players {
-			if len(p.Hand) > state.Rules.HandSize {
+			if len(p.Hand) > state.Rules.PlayHandSize {
 				return fmt.Errorf("hand size too large: %d", len(p.Hand))
+			}
+		}
+		if totalTricks(state) == 0 && len(state.Round.TrickCards) == 0 {
+			for _, p := range state.Players {
+				if len(p.Hand) != state.Rules.PlayHandSize {
+					return fmt.Errorf("hand size mismatch at start of play: %d", len(p.Hand))
+				}
 			}
 		}
 	}
 	return nil
 }
 
+func totalTricks(state engine.GameState) int {
+	total := 0
+	for _, p := range state.Players {
+		total += len(p.Tricks)
+	}
+	return total
+}
+
 func countCards(state engine.GameState) (int, bool) {
-	seen := map[engine.Card]bool{}
+	seen := map[engine.Card]int{}
 	total := 0
 	dup := false
 	add := func(c engine.Card) {
 		total++
-		if seen[c] {
+		if seen[c] > 0 {
 			dup = true
 		}
-		seen[c] = true
+		seen[c]++
 	}
 	for _, p := range state.Players {
 		for _, c := range p.Hand {
@@ -194,9 +218,6 @@ func countCards(state engine.GameState) (int, bool) {
 		add(c)
 	}
 	for _, c := range state.Round.TrickCards {
-		add(c)
-	}
-	for _, c := range state.Round.Discarded {
 		add(c)
 	}
 	return total, dup

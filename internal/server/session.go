@@ -110,7 +110,7 @@ func (s *Session) startGame(ruleset string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	rules := engine.ClassicPreset()
+	rules := engine.TisyachaPreset()
 	s.state = engine.NewGame(rules, time.Now().UnixNano())
 	engine.DealRound(&s.state)
 	s.started = true
@@ -218,22 +218,8 @@ func fallbackAction(state engine.GameState, player int, legal []engine.Action) e
 			}
 		}
 		return pick
-	case engine.PhaseTrumpSelect:
-		counts := map[engine.Suit]int{}
-		for _, c := range state.Players[player].Hand {
-			counts[c.Suit]++
-		}
-		best := engine.SuitClubs
-		bestCount := -1
-		for s, c := range counts {
-			if c > bestCount {
-				bestCount = c
-				best = s
-			}
-		}
-		return engine.Action{Type: engine.ActionChooseTrump, Suit: &best}
-	case engine.PhaseDiscard:
-		count := state.Rules.KittySize
+	case engine.PhaseSnos:
+		count := state.Rules.SnosCards
 		hand := append([]engine.Card(nil), state.Players[player].Hand...)
 		// sort by lowest points then rank strength
 		for i := 0; i < len(hand); i++ {
@@ -248,7 +234,7 @@ func fallbackAction(state engine.GameState, player int, legal []engine.Action) e
 		if count > len(hand) {
 			count = len(hand)
 		}
-		return engine.Action{Type: engine.ActionDiscard, Cards: hand[:count]}
+		return engine.Action{Type: engine.ActionSnos, Cards: hand[:count]}
 	case engine.PhasePlayTricks:
 		lowest := engine.Action{}
 		best := -1
@@ -282,7 +268,7 @@ func (s *Session) sendStateLocked(events []Event) {
 		return
 	}
 	if !s.started {
-		s.state = engine.NewGame(engine.ClassicPreset(), 0)
+		s.state = engine.NewGame(engine.TisyachaPreset(), 0)
 	}
 	msg := ServerMessage{
 		Type:   "state",
@@ -296,9 +282,36 @@ func (s *Session) sendError(code, message string) {
 	if s.conn == nil {
 		return
 	}
+	if message != "" {
+		log.Printf("ws error: code=%s detail=%s", code, message)
+	}
+	message = translateErrorMessage(code, message)
 	msg := ServerMessage{
 		Type:  "error",
 		Error: &ErrorView{Code: code, Message: message},
 	}
 	_ = s.conn.WriteJSON(msg)
+}
+
+func translateErrorMessage(code, detail string) string {
+	switch code {
+	case "bad_request":
+		return "Некорректный запрос"
+	case "unknown_type":
+		return "Неизвестный тип сообщения"
+	case "not_started":
+		return "Игра ещё не началась"
+	case "missing_action_id":
+		return "Не указан идентификатор действия"
+	case "bad_action":
+		return "Некорректное действие"
+	case "apply_failed":
+		return "Действие невозможно"
+	case "bot_no_actions":
+		return "Бот не может сделать ход"
+	case "bot_action_failed":
+		return "Бот не смог выполнить ход"
+	default:
+		return "Произошла ошибка"
+	}
 }

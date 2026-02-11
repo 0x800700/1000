@@ -11,10 +11,10 @@ func TestDealDeterministic(t *testing.T) {
 	DealRound(&g2)
 
 	for i := 0; i < r.Players; i++ {
-		if len(g1.Players[i].Hand) != r.HandSize {
+		if len(g1.Players[i].Hand) != r.DealHandSize {
 			t.Fatalf("hand size: got %d", len(g1.Players[i].Hand))
 		}
-		if len(g2.Players[i].Hand) != r.HandSize {
+		if len(g2.Players[i].Hand) != r.DealHandSize {
 			t.Fatalf("hand size: got %d", len(g2.Players[i].Hand))
 		}
 		for c := range g1.Players[i].Hand {
