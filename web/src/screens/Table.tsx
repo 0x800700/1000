@@ -15,6 +15,8 @@ export default function Table() {
   const [lastError, setLastError] = useState<string | null>(null)
   const [selectedBid, setSelectedBid] = useState<number | null>(null)
   const [showDebug, setShowDebug] = useState(false)
+  const [displayTrick, setDisplayTrick] = useState<Card[]>([])
+  const [trickClearing, setTrickClearing] = useState(false)
 
   useEffect(() => {
     const client = connect((msg: ServerMessage) => {
@@ -124,6 +126,21 @@ export default function Table() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [state, canPass, selectedBid, bidStep, bidValues, maxBid, minNext])
+
+  useEffect(() => {
+    if (trickCards.length === 0 && displayTrick.length > 0) {
+      setTrickClearing(true)
+      const t = setTimeout(() => {
+        setDisplayTrick([])
+        setTrickClearing(false)
+      }, 320)
+      return () => clearTimeout(t)
+    }
+    if (trickCards.length > 0) {
+      setDisplayTrick(trickCards)
+      setTrickClearing(false)
+    }
+  }, [trickCards, displayTrick.length])
 
   function autoAction() {
     if (!state) return
@@ -361,16 +378,17 @@ export default function Table() {
             </div>
           )}
         </div>
-        <div className="trick-center">
-          {trickCards.map((c, idx) => (
-            <CardView
-              key={`trick-${cardKey(c)}-${idx}`}
-              card={c}
-              index={idx}
-              total={trickCards.length}
-              isLegal={true}
-              size="trick"
-            />
+        <div className={`trick-center ${trickClearing ? 'clearing' : ''}`}>
+          {displayTrick.map((c, idx) => (
+            <div key={`trick-${cardKey(c)}-${idx}`} className="trick-card">
+              <CardView
+                card={c}
+                index={idx}
+                total={displayTrick.length}
+                isLegal={true}
+                size="trick"
+              />
+            </div>
           ))}
         </div>
         <div className="hand-fan">

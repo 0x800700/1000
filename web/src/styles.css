@@ -213,6 +213,30 @@ body {
   z-index: 2;
 }
 
+.trick-card {
+  opacity: 0;
+  transform: scale(0.92);
+  animation: trick-in 160ms ease-out forwards;
+}
+
+.trick-center.clearing .trick-card {
+  animation: trick-out 220ms ease-in forwards;
+}
+
+@keyframes trick-in {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes trick-out {
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
 .card {
   width: 72px;
   height: 104px;
