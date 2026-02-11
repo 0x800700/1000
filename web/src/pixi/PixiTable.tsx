@@ -180,12 +180,13 @@ function renderHand(
     const cardContainer = new PIXI.Container()
     const sprite = new PIXI.Sprite(resolver.getCardTexture(card))
     sprite.anchor.set(0.5)
-    sprite.scale.set(0.95)
+    const baseScale = 110 / 140
+    sprite.scale.set(1)
 
     const isLegal = isDiscardPhase ? true : legal.has(cardKey(card))
     if (isLegal) {
       const glow = new PIXI.Graphics()
-      glow.lineStyle(2, 0xe0c36a, 0.9)
+      glow.lineStyle(3, 0xc7a24a, 0.75)
       glow.drawRoundedRect(-70, -98, 140, 196, 14)
       cardContainer.addChild(glow)
     }
@@ -201,6 +202,7 @@ function renderHand(
     cardContainer.x = deal ? deckPos.x : pos.x
     cardContainer.y = deal ? deckPos.y : pos.y
     cardContainer.rotation = pos.rotation
+    cardContainer.scale.set(baseScale)
     cardContainer.alpha = isLegal ? 1 : 0.45
     cardContainer.eventMode = isLegal ? 'static' : 'none'
     if (isLegal) {
@@ -214,11 +216,11 @@ function renderHand(
       })
       cardContainer.on('pointerover', () => {
         cardContainer.y = pos.y - 8
-        cardContainer.scale.set(1.03)
+        cardContainer.scale.set(baseScale * 1.03)
       })
       cardContainer.on('pointerout', () => {
         cardContainer.y = pos.y
-        cardContainer.scale.set(1)
+        cardContainer.scale.set(baseScale)
       })
     }
     container.addChild(cardContainer)
@@ -237,13 +239,14 @@ function renderTrick(
   app: PIXI.Application
 ) {
   container.removeChildren()
-  const center = { x: width / 2, y: height / 2 - 10 }
-  const startX = center.x - ((trick.length - 1) * 90) / 2
+  const center = { x: width / 2, y: height / 2 - 6 }
+  const slots = trickSlots(trick.length, center)
   trick.forEach((card, i) => {
     const sprite = new PIXI.Sprite(resolver.getCardTexture(card))
     sprite.anchor.set(0.5)
-    sprite.x = startX + i * 90
-    sprite.y = center.y
+    sprite.x = slots[i].x
+    sprite.y = slots[i].y
+    sprite.rotation = slots[i].rotation
     sprite.scale.set(1.0)
     sprite.alpha = 0
     container.addChild(sprite)
@@ -281,14 +284,15 @@ function animatePlay(
 
 function handPositions(count: number, width: number, height: number) {
   const positions: { x: number; y: number; rotation: number }[] = []
-  const spacing = 64
+  const spacing = 72
   const startX = width / 2 - (count - 1) * spacing / 2
+  const maxAngle = 10
   for (let i = 0; i < count; i++) {
     const offset = i - (count - 1) / 2
     positions.push({
       x: startX + i * spacing,
-      y: height - 110 - Math.abs(offset) * 4,
-      rotation: (offset * 3 * Math.PI) / 180
+      y: height - 86 - Math.abs(offset) * 3,
+      rotation: (offset * maxAngle * 2 * Math.PI) / 180 / Math.max(1, count - 1)
     })
   }
   return positions
@@ -305,9 +309,20 @@ function prevHandPosition(hand: Card[], card: Card, width: number, height: numbe
 
 function trickPosition(trick: Card[], card: Card, width: number, height: number) {
   const idx = trick.findIndex((c) => cardKey(c) === cardKey(card))
-  const center = { x: width / 2, y: height / 2 - 10 }
-  const startX = center.x - ((trick.length - 1) * 90) / 2
-  return { x: startX + idx * 90, y: center.y }
+  const center = { x: width / 2, y: height / 2 - 6 }
+  const slots = trickSlots(trick.length, center)
+  return { x: slots[idx].x, y: slots[idx].y }
+}
+
+function trickSlots(count: number, center: { x: number; y: number }) {
+  const positions = [
+    { x: center.x - 90, y: center.y + 6, rotation: -0.08 },
+    { x: center.x, y: center.y, rotation: 0 },
+    { x: center.x + 90, y: center.y + 6, rotation: 0.08 }
+  ]
+  if (count === 1) return [positions[1]]
+  if (count === 2) return [positions[0], positions[2]]
+  return positions
 }
 
 function tween(

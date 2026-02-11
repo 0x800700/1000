@@ -71,19 +71,17 @@ export class CardTextureFactory {
     container.addChild(shadow)
 
     // Paper gradient
-    const grad = new PIXI.Graphics()
-    grad.beginFill(PaperTop)
-    grad.drawRoundedRect(0, 0, CardW, CardH, CornerRadius)
-    grad.endFill()
-    const gradTex = this.app.renderer.generateTexture(grad)
-    const paper = new PIXI.Sprite(gradTex)
-    paper.height = CardH
-    paper.width = CardW
-    const overlay = new PIXI.Graphics()
-    overlay.beginFill(PaperBottom, 1)
-    overlay.drawRoundedRect(0, CardH / 2, CardW, CardH / 2, CornerRadius)
-    overlay.endFill()
-    container.addChild(paper, overlay)
+    const paperTop = new PIXI.Graphics()
+    paperTop.beginFill(PaperTop)
+    paperTop.drawRoundedRect(0, 0, CardW, CardH, CornerRadius)
+    paperTop.endFill()
+    container.addChild(paperTop)
+
+    const paperBottom = new PIXI.Graphics()
+    paperBottom.beginFill(PaperBottom, 1)
+    paperBottom.drawRoundedRect(0, CardH / 2, CardW, CardH / 2, CornerRadius)
+    paperBottom.endFill()
+    container.addChild(paperBottom)
 
     // Border
     const border = new PIXI.Graphics()
@@ -166,6 +164,12 @@ export class CardTextureFactory {
       grid.lineTo(x + CardH, SafeInset)
     }
     container.addChild(grid)
+
+    const glow = new PIXI.Graphics()
+    glow.beginFill(BackBorder, 0.18)
+    glow.drawRoundedRect(SafeInset, SafeInset, CardW - SafeInset * 2, CardH - SafeInset * 2, CornerRadius - 4)
+    glow.endFill()
+    container.addChild(glow)
 
     const emblem = new PIXI.Graphics()
     emblem.beginFill(BackBorder, 0.18)
