@@ -184,6 +184,8 @@ type RoundEffects struct {
 	BarrelExit    []int
 	BarrelPenalty []int
 	Dumped        []int
+	Winner        int
+	HasWinner     bool
 }
 
 func NewGame(r Rules, seed int64) GameState {

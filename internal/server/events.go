@@ -87,6 +87,9 @@ func buildEvents(prev engine.GameState, next engine.GameState, player int, actio
 		for _, p := range next.LastRoundEffects.Dumped {
 			events = append(events, Event{Type: "dump_reset", Data: EventPayload{Player: p}})
 		}
+		if next.LastRoundEffects.HasWinner {
+			events = append(events, Event{Type: "game_ended", Data: EventPayload{Player: next.LastRoundEffects.Winner}})
+		}
 	}
 	return events
 }

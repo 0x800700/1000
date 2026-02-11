@@ -248,6 +248,7 @@ export default function Table() {
         </div>
         <div className="action-bar">
           <div className="instruction">{instruction}</div>
+          <div className="action-hint">Конец игры: 1000 очков. Бочка — с 880, нужно набрать 120 за 3 попытки.</div>
           <div className="action-status">
             {connected ? 'Подключено' : 'Отключено'} • Фаза: {phaseLabel(state?.round.phase)} • Ход игрока:{' '}
             {state
@@ -383,6 +384,7 @@ export default function Table() {
               <li>Роспись: можно объявить до первого хода.</li>
               <li>Болт: если не взяли ни одной взятки.</li>
               <li>Бочка и самосвал считаются автоматически по очкам.</li>
+              <li>Игра заканчивается, когда игрок набирает 1000 очков вне бочки.</li>
             </ul>
             <p>
               <strong>Ставка</strong> — заказ очков. <strong>Взятки</strong> — количество выигранных взяток.
@@ -491,6 +493,8 @@ function formatEvent(e: any) {
       return `Игрок ${p} получил штраф за бочку (-${e.data?.value ?? 0})`
     case 'dump_reset':
       return `Игрок ${p} попал на самосвал — счёт обнулён`
+    case 'game_ended':
+      return `Игра окончена. Победил игрок ${p}`
     default:
       return 'Неизвестное событие'
   }

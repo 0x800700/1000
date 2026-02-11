@@ -200,6 +200,13 @@ p {
   font-size: 14px;
 }
 
+.action-hint {
+  text-align: center;
+  font-size: 12px;
+  color: #d9c58f;
+  margin-top: -4px;
+}
+
 .bid-info {
   display: flex;
   justify-content: space-between;

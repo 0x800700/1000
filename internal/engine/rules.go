@@ -99,6 +99,7 @@ func trickWinner(order []int, cards []Card, trump *Suit) int {
 
 func scoreRound(g *GameState) {
 	g.LastRoundEffects = RoundEffects{}
+	g.LastRoundEffects.Winner = -1
 	g.LastRoundPoints = make([]int, len(g.Players))
 	for i := range g.Players {
 		g.Players[i].RoundPts = 0
@@ -205,9 +206,11 @@ func scoreRound(g *GameState) {
 		}
 	}
 
-	for _, p := range g.Players {
-		if p.GameScore >= g.Rules.WinScore {
+	for i, p := range g.Players {
+		if p.GameScore >= g.Rules.WinScore && !p.OnBarrel {
 			g.Round.Phase = PhaseGameOver
+			g.LastRoundEffects.Winner = i
+			g.LastRoundEffects.HasWinner = true
 			return
 		}
 	}
