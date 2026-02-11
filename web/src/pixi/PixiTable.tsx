@@ -15,6 +15,8 @@ type Props = {
 type Containers = {
   hand: PIXI.Container
   trick: PIXI.Container
+  trickSlots: PIXI.Container
+  trump: PIXI.Container
   bots: PIXI.Container
   deck: PIXI.Container
   effects: PIXI.Container
@@ -52,13 +54,15 @@ export default function PixiTable({
         resolverRef.current = new CardTextureFactory(app)
 
         const hand = new PIXI.Container()
+        const trickSlots = new PIXI.Container()
         const trick = new PIXI.Container()
+        const trump = new PIXI.Container()
         const bots = new PIXI.Container()
         const deck = new PIXI.Container()
         const effects = new PIXI.Container()
-        containersRef.current = { hand, trick, bots, deck, effects }
+        containersRef.current = { hand, trick, trickSlots, trump, bots, deck, effects }
 
-        app.stage.addChild(deck, bots, trick, hand, effects)
+        app.stage.addChild(deck, bots, trickSlots, trick, hand, trump, effects)
       })
 
     return () => {
@@ -83,6 +87,7 @@ export default function PixiTable({
 
     const hand = state?.players?.[0]?.hand ?? []
     const trick = state?.round?.trickCards ?? []
+    const trump = state?.round?.trump
 
     const prev = prevRef.current
     const deal = prev.hand.length === 0 && hand.length > 0
@@ -103,11 +108,13 @@ export default function PixiTable({
       isDiscardPhase
     )
 
+    renderTrickSlots(containers.trickSlots, width, height)
     if (trick.length === 0 && prev.trick.length > 0) {
       fadeOutTrick(containers.trick, app)
     } else {
       renderTrick(containers.trick, resolver, trick, width, height, app)
     }
+    renderTrumpBadge(containers.trump, trump, width, height)
 
     if (trick.length > prev.trick.length && prev.hand.length > hand.length) {
       const played = trick.find((c) => !prev.trick.some((p) => cardKey(p) === cardKey(c)))
@@ -215,8 +222,8 @@ function renderHand(
         }
       })
       cardContainer.on('pointerover', () => {
-        cardContainer.y = pos.y - 8
-        cardContainer.scale.set(baseScale * 1.03)
+        cardContainer.y = pos.y - 6
+        cardContainer.scale.set(baseScale * 1.02)
       })
       cardContainer.on('pointerout', () => {
         cardContainer.y = pos.y
@@ -252,6 +259,42 @@ function renderTrick(
     container.addChild(sprite)
     tween(app, sprite, { alpha: 1 }, 140)
   })
+}
+
+function renderTrickSlots(container: PIXI.Container, width: number, height: number) {
+  container.removeChildren()
+  const center = { x: width / 2, y: height / 2 - 6 }
+  const slots = trickSlots(3, center)
+  slots.forEach((s) => {
+    const g = new PIXI.Graphics()
+    g.lineStyle(2, 0xc7a24a, 0.25)
+    g.drawRoundedRect(-70, -98, 140, 196, 14)
+    g.x = s.x
+    g.y = s.y
+    g.rotation = s.rotation
+    g.alpha = 0.6
+    container.addChild(g)
+  })
+}
+
+function renderTrumpBadge(container: PIXI.Container, trump: string | undefined, width: number, height: number) {
+  container.removeChildren()
+  if (!trump) return
+  const badge = new PIXI.Graphics()
+  badge.beginFill(0x0f3b2e, 0.85)
+  badge.lineStyle(2, 0xc7a24a, 0.9)
+  badge.drawRoundedRect(0, 0, 86, 34, 10)
+  badge.endFill()
+  badge.x = width / 2 - 43
+  badge.y = height / 2 - 120
+  const label = new PIXI.Text(`Trump ${suitGlyph(trump)}`, {
+    fontFamily: 'Georgia',
+    fontSize: 16,
+    fill: 0xf5e6b3
+  })
+  label.x = badge.x + 12
+  label.y = badge.y + 6
+  container.addChild(badge, label)
 }
 
 function fadeOutTrick(container: PIXI.Container, app: PIXI.Application) {
@@ -316,13 +359,28 @@ function trickPosition(trick: Card[], card: Card, width: number, height: number)
 
 function trickSlots(count: number, center: { x: number; y: number }) {
   const positions = [
-    { x: center.x - 90, y: center.y + 6, rotation: -0.08 },
+    { x: center.x - 96, y: center.y + 6, rotation: (-6 * Math.PI) / 180 },
     { x: center.x, y: center.y, rotation: 0 },
-    { x: center.x + 90, y: center.y + 6, rotation: 0.08 }
+    { x: center.x + 96, y: center.y + 6, rotation: (6 * Math.PI) / 180 }
   ]
   if (count === 1) return [positions[1]]
   if (count === 2) return [positions[0], positions[2]]
   return positions
+}
+
+function suitGlyph(suit: string) {
+  switch (suit) {
+    case 'H':
+      return '♥'
+    case 'D':
+      return '♦'
+    case 'C':
+      return '♣'
+    case 'S':
+      return '♠'
+    default:
+      return suit
+  }
 }
 
 function tween(

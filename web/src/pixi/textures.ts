@@ -64,10 +64,10 @@ export class CardTextureFactory {
 
     // Shadow
     const shadow = new PIXI.Graphics()
-    shadow.beginFill(0x000000, 0.28)
-    shadow.drawRoundedRect(0, 8, CardW, CardH, CornerRadius)
+    shadow.beginFill(0x000000, 0.25)
+    shadow.drawRoundedRect(0, 6, CardW, CardH, CornerRadius)
     shadow.endFill()
-    shadow.filters = [new PIXI.BlurFilter(18)]
+    shadow.filters = [new PIXI.BlurFilter(14)]
     container.addChild(shadow)
 
     // Paper gradient
