@@ -97,3 +97,23 @@ func TestGameDoesNotEndOnBarrel(t *testing.T) {
 		t.Fatalf("game should not end while on barrel")
 	}
 }
+
+func TestBoltIncrement(t *testing.T) {
+	r := ClassicPreset()
+	g := NewGame(r, 1)
+	g.Round.BidWinner = 0
+	scoreRound(&g)
+	if g.Players[1].Bolts != 1 || g.Players[2].Bolts != 1 {
+		t.Fatalf("expected bolts to increment for players with no tricks")
+	}
+}
+
+func TestBarrelEntry(t *testing.T) {
+	r := ClassicPreset()
+	g := NewGame(r, 1)
+	g.Players[1].GameScore = r.BarrelThreshold
+	scoreRound(&g)
+	if !g.Players[1].OnBarrel {
+		t.Fatalf("expected player to be on barrel at threshold")
+	}
+}

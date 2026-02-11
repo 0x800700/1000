@@ -189,6 +189,13 @@ p {
   margin-top: 6px;
 }
 
+.turn-hint {
+  text-align: center;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #f5e6b3;
+}
+
 .self-score {
   margin-top: 6px;
   text-align: center;
@@ -388,6 +395,13 @@ p {
 .status-item {
   display: grid;
   gap: 6px;
+}
+
+.status-item.is-turn {
+  background: rgba(224, 195, 106, 0.08);
+  border: 1px solid rgba(224, 195, 106, 0.25);
+  border-radius: 8px;
+  padding: 6px;
 }
 
 .status-title {

@@ -63,9 +63,16 @@ func (b *NormalBot) ChooseAction(state engine.GameState, player int) engine.Acti
 
 func discardLowestPoints(state engine.GameState, player int, count int) engine.Action {
 	hand := append([]engine.Card(nil), state.Players[player].Hand...)
+	pairSuit := marriagePairs(hand)
 	sort.Slice(hand, func(i, j int) bool {
 		pi := engine.CardPoints(hand[i].Rank)
 		pj := engine.CardPoints(hand[j].Rank)
+		if pairSuit[hand[i].Suit] && (hand[i].Rank == engine.RankQ || hand[i].Rank == engine.RankK) {
+			pi += 20
+		}
+		if pairSuit[hand[j].Suit] && (hand[j].Rank == engine.RankQ || hand[j].Rank == engine.RankK) {
+			pj += 20
+		}
 		if pi == pj {
 			return engine.RankStrength(hand[i].Rank) < engine.RankStrength(hand[j].Rank)
 		}
@@ -84,6 +91,9 @@ func bidByHeuristic(state engine.GameState, player int) engine.Action {
 	for _, c := range hand {
 		points += engine.CardPoints(c.Rank)
 		suitCounts[c.Suit]++
+	}
+	for suit := range marriagePairs(hand) {
+		points += marriageValue(suit)
 	}
 	bonus := 0
 	for _, c := range suitCounts {
@@ -113,6 +123,9 @@ func playHeuristic(state engine.GameState, player int) engine.Action {
 	legal := engine.LegalActions(state, player)
 	if len(legal) == 0 {
 		return engine.Action{Type: engine.ActionPass}
+	}
+	if m, ok := bestMarriageAction(legal); ok {
+		return m
 	}
 	hand := state.Players[player].Hand
 	_ = hand
@@ -165,6 +178,60 @@ func playHeuristic(state engine.GameState, player int) engine.Action {
 		}
 	}
 	return lowest
+}
+
+func marriagePairs(hand []engine.Card) map[engine.Suit]bool {
+	pairs := map[engine.Suit]bool{}
+	hasQ := map[engine.Suit]bool{}
+	hasK := map[engine.Suit]bool{}
+	for _, c := range hand {
+		if c.Rank == engine.RankQ {
+			hasQ[c.Suit] = true
+		}
+		if c.Rank == engine.RankK {
+			hasK[c.Suit] = true
+		}
+	}
+	for s := range hasQ {
+		if hasK[s] {
+			pairs[s] = true
+		}
+	}
+	return pairs
+}
+
+func marriageValue(s engine.Suit) int {
+	switch s {
+	case engine.SuitHearts:
+		return 100
+	case engine.SuitDiamonds:
+		return 80
+	case engine.SuitClubs:
+		return 60
+	case engine.SuitSpades:
+		return 40
+	default:
+		return 0
+	}
+}
+
+func bestMarriageAction(legal []engine.Action) (engine.Action, bool) {
+	best := engine.Action{}
+	bestValue := -1
+	for _, a := range legal {
+		if a.MarriageSuit == nil {
+			continue
+		}
+		val := marriageValue(*a.MarriageSuit)
+		if val > bestValue {
+			bestValue = val
+			best = a
+		}
+	}
+	if bestValue >= 0 {
+		return best, true
+	}
+	return engine.Action{}, false
 }
 
 func winsIfPlayed(state engine.GameState, player int, card engine.Card, trump *engine.Suit) bool {

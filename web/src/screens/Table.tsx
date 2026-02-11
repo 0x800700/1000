@@ -163,9 +163,12 @@ export default function Table() {
         sendActionOnSocket({ type: 'rospis' })
         return
       }
-      const legal = legalActions
-        .filter((a) => a.type === 'play_card' && a.card)
-        .map((a) => a.card as Card)
+      const marriage = legalActions.find((a) => a.type === 'play_card' && a.card && a.marriageSuit)
+      if (marriage && marriage.card) {
+        sendActionOnSocket({ type: 'play_card', card: marriage.card, marriageSuit: marriage.marriageSuit })
+        return
+      }
+      const legal = legalActions.filter((a) => a.type === 'play_card' && a.card).map((a) => a.card as Card)
       if (legal.length > 0) {
         const lowest = pickLowestPoints(legal, 1)[0]
         sendActionOnSocket({ type: 'play_card', card: lowest })
@@ -266,6 +269,11 @@ export default function Table() {
                 : '-'
               : '-'}
           </div>
+          {state?.round.hasCurrent && (
+            <div className="turn-hint">
+              {state.round.currentPlayer === 0 ? 'Ваш ход' : `Ход соперника (игрок ${state.round.currentPlayer})`}
+            </div>
+          )}
           {state?.round.phase === 'GameOver' && winnerId !== null && winnerId >= 0 && (
             <div className="winner-badge">Победитель: игрок {winnerId}</div>
           )}
@@ -368,7 +376,9 @@ export default function Table() {
               >
                 Снос
               </button>
-              <div className="action-note">Выберите 2 карты кликом по ним, затем нажмите «Снос»</div>
+              <div className="action-note">
+                Выбрано: {discardSelection.length}/{state?.rules.snosCards ?? 2} • затем нажмите «Снос»
+              </div>
             </div>
           )}
           {state?.round.phase === 'PlayTricks' && (
@@ -421,9 +431,9 @@ export default function Table() {
                 <h3>Статусы</h3>
                 <div className="status-list">
                   {state.players.map((p) => (
-                    <div key={p.id} className="status-item">
+                    <div key={p.id} className={`status-item ${currentTurn === p.id ? 'is-turn' : ''}`}>
                       <div className="status-title">
-                        Игрок {p.id} • Счёт: {p.gameScore} • Взятки: {p.tricks}
+                        {p.id === 0 ? 'Вы' : `Игрок ${p.id}`} • Счёт: {p.gameScore} • Взятки: {p.tricks}
                       </div>
                       <div className="status-badges">
                         {p.onBarrel && (
@@ -605,7 +615,7 @@ function phaseInstruction(phase?: string) {
     case 'KittyTake':
       return 'Прикуп: возьмите карты'
     case 'Snos':
-      return 'Снос: отдайте по одной карте каждому сопернику'
+      return 'Снос: выберите 2 карты и отдайте соперникам'
     case 'PlayTricks':
       return 'Ход: выберите подсвеченную карту'
     case 'ScoreRound':
