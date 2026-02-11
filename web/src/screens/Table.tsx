@@ -164,37 +164,6 @@ export default function Table() {
     <section className="table-layout">
       <div className="table-canvas">
         <PixiTable trickCards={trickCards} />
-        <div className="status">
-          <div className="status-row">
-            <span>Connection</span>
-            <strong>{readyStateLabel(wsStatus.readyState) === 'OPEN' ? 'Connected' : 'Disconnected'}</strong>
-          </div>
-          <div className="status-row">
-            <span>Phase</span>
-            <strong>{state?.round.phase ?? '-'}</strong>
-          </div>
-          <div className="status-row">
-            <span>Turn</span>
-            <strong>
-              {state?.round.trickOrder?.[state?.round.trickCards?.length ?? 0] ??
-                state?.round.bidTurn ??
-                '-'}
-            </strong>
-          </div>
-          {lastError && <div className="status-error">{lastError}</div>}
-          {import.meta.env.DEV && (
-            <button className="secondary ghost" onClick={() => setShowDebug((v) => !v)}>
-              {showDebug ? 'Hide debug' : 'Show debug'}
-            </button>
-          )}
-          {showDebug && (
-            <div className="debug">
-              <div>WS: {readyStateLabel(wsStatus.readyState)}</div>
-              <div>Session: {state?.meta.sessionId ?? '-'}</div>
-              <div>Player: {state?.meta.playerId ?? 0}</div>
-            </div>
-          )}
-        </div>
         {!state && (
           <div className="loading">
             <div>Loading...</div>
@@ -228,6 +197,24 @@ export default function Table() {
           </div>
         </div>
         <div className="action-panel">
+          <div className="action-status">
+            Connection: {readyStateLabel(wsStatus.readyState) === 'OPEN' ? 'Connected' : 'Disconnected'} • Phase:{' '}
+            {state?.round.phase ?? '-'} • Turn:{' '}
+            {state?.round.trickOrder?.[state?.round.trickCards?.length ?? 0] ?? state?.round.bidTurn ?? '-'}
+          </div>
+          {lastError && <div className="status-error">{lastError}</div>}
+          {import.meta.env.DEV && (
+            <button className="secondary ghost" onClick={() => setShowDebug((v) => !v)}>
+              {showDebug ? 'Hide debug' : 'Show debug'}
+            </button>
+          )}
+          {showDebug && (
+            <div className="debug">
+              <div>WS: {readyStateLabel(wsStatus.readyState)}</div>
+              <div>Session: {state?.meta.sessionId ?? '-'}</div>
+              <div>Player: {state?.meta.playerId ?? 0}</div>
+            </div>
+          )}
           {state?.round.phase === 'Bidding' && (
             <div className="bid-panel">
               <div className="instruction">Bidding: choose a bid or Pass</div>

@@ -86,27 +86,6 @@ body {
   min-height: 500px;
 }
 
-.status {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  background: rgba(8, 20, 14, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  color: #f5e6b3;
-  line-height: 1.4;
-  z-index: 2;
-  min-width: 220px;
-}
-
-.status-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .status-error {
   margin-top: 6px;
   color: #f2b2a2;
@@ -170,6 +149,15 @@ body {
   gap: 8px;
   align-items: center;
   z-index: 2;
+}
+
+.action-status {
+  font-size: 12px;
+  color: #d9c58f;
+  background: rgba(8, 20, 14, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 10px;
+  border-radius: 8px;
 }
 
 .bid-panel {
