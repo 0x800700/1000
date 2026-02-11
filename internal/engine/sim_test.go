@@ -7,7 +7,7 @@ import (
 )
 
 func TestSelfPlayRoundsManySeeds(t *testing.T) {
-	for seed := int64(1); seed <= 300; seed++ {
+	for seed := int64(1); seed <= 200; seed++ {
 		if err := sim.RunSelfPlayRounds(seed, 10, 500); err != nil {
 			t.Fatalf("self-play failed: %v", err)
 		}

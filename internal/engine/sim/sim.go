@@ -144,6 +144,16 @@ func checkInvariants(state engine.GameState) error {
 	if len(state.Round.TrickCards) > 3 {
 		return fmt.Errorf("invalid trick size: %d", len(state.Round.TrickCards))
 	}
+	switch state.Round.Phase {
+	case engine.PhaseBidding, engine.PhaseTrumpSelect, engine.PhaseKittyTake:
+		if len(state.Round.Discarded) != 0 {
+			return fmt.Errorf("discarded not empty before discard: %d", len(state.Round.Discarded))
+		}
+	case engine.PhaseDiscard, engine.PhasePlayTricks, engine.PhaseScoreRound, engine.PhaseGameOver:
+		if len(state.Round.Discarded) != state.Rules.KittySize {
+			return fmt.Errorf("discarded size mismatch: %d", len(state.Round.Discarded))
+		}
+	}
 	if state.Round.Phase == engine.PhaseDiscard {
 		if len(state.Players[state.Round.BidWinner].Hand) != state.Rules.HandSize+state.Rules.KittySize {
 			return fmt.Errorf("bidder hand not expanded after kitty")
