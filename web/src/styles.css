@@ -240,6 +240,20 @@ p {
   padding: 10px 12px;
 }
 
+.card-select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(245, 230, 179, 0.85);
+  color: #2b1f0a;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.card-select.selected {
+  outline: 2px solid #e0c36a;
+}
+
 .trick-center {
   position: absolute;
   left: 50%;

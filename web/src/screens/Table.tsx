@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import PixiTable from '../pixi/PixiTable'
 import { connect } from '../ws'
 import type { ActionDTO, Card, GameView, ServerMessage } from '../types'
-import CardView from '../components/Card'
 
 export default function Table() {
   const [state, setState] = useState<GameView | null>(null)
@@ -15,8 +14,6 @@ export default function Table() {
   const [lastError, setLastError] = useState<string | null>(null)
   const [selectedBid, setSelectedBid] = useState<number | null>(null)
   const [showDebug, setShowDebug] = useState(false)
-  const [displayTrick, setDisplayTrick] = useState<Card[]>([])
-  const [trickClearing, setTrickClearing] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const helpRef = useRef<HTMLDivElement | null>(null)
 
@@ -62,8 +59,6 @@ export default function Table() {
   }, [state])
 
   const hand = state?.players[0].hand ?? []
-  const trickCards = state?.round.trickCards ?? []
-
   function sendActionOnSocket(action: ActionDTO) {
     const actionId = `${Date.now()}-${Math.random().toString(36).slice(2)}`
     const ws = clientRef.current
@@ -128,21 +123,6 @@ export default function Table() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [state, canPass, selectedBid, bidStep, bidValues, maxBid, minNext])
-
-  useEffect(() => {
-    if (trickCards.length === 0 && displayTrick.length > 0) {
-      setTrickClearing(true)
-      const t = setTimeout(() => {
-        setDisplayTrick([])
-        setTrickClearing(false)
-      }, 320)
-      return () => clearTimeout(t)
-    }
-    if (trickCards.length > 0) {
-      setDisplayTrick(trickCards)
-      setTrickClearing(false)
-    }
-  }, [trickCards, displayTrick.length])
 
   useEffect(() => {
     if (!showHelp) return
@@ -217,7 +197,11 @@ export default function Table() {
   return (
     <section className="table-layout">
       <div className="table-canvas">
-        <PixiTable trickCards={trickCards} />
+        <PixiTable
+          state={state}
+          legalCardKeys={legalCardKeys}
+          onPlayCard={(card) => sendActionOnSocket({ type: 'play_card', card })}
+        />
         {!state && (
           <div className="loading">
             <div>Loading...</div>
@@ -420,43 +404,22 @@ export default function Table() {
             </div>
           )}
         </div>
-        <div className={`trick-center ${trickClearing ? 'clearing' : ''}`}>
-          {displayTrick.map((c, idx) => (
-            <div key={`trick-${cardKey(c)}-${idx}`} className="trick-card">
-              <CardView
-                card={c}
-                index={idx}
-                total={displayTrick.length}
-                isLegal={true}
-                size="trick"
-              />
-            </div>
-          ))}
-        </div>
         <div className="hand-fan">
-          {hand.map((c, idx) => {
-            const key = cardKey(c)
-            const isLegal = legalCardKeys.has(key)
-            const isSelected = discardSelection.some((d) => cardKey(d) === key)
-            return (
-              <CardView
-                key={key}
-                card={c}
-                index={idx}
-                total={hand.length}
-                isLegal={state?.round.phase === 'Discard' ? true : isLegal}
-                isSelected={isSelected}
-                size="hand"
-                onClick={() => {
-                  if (state?.round.phase === 'Discard') {
-                    toggleDiscard(c)
-                  } else if (isLegal) {
-                    sendActionOnSocket({ type: 'play_card', card: c })
-                  }
-                }}
-              />
-            )
-          })}
+          {state?.round.phase === 'Discard' &&
+            hand.map((c) => {
+              const key = cardKey(c)
+              const isSelected = discardSelection.some((d) => cardKey(d) === key)
+              return (
+                <button
+                  key={key}
+                  className={`card-select ${isSelected ? 'selected' : ''}`}
+                  onClick={() => toggleDiscard(c)}
+                >
+                  {c.rank}
+                  {c.suit}
+                </button>
+              )
+            })}
         </div>
         {showHelp && (
           <div className="modal" onClick={() => setShowHelp(false)}>
