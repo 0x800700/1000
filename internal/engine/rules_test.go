@@ -74,3 +74,26 @@ func TestScoreRoundContractFail(t *testing.T) {
 		t.Fatalf("expected contract player to lose points")
 	}
 }
+
+func TestGameEndsAtWinScoreNotOnBarrel(t *testing.T) {
+	r := ClassicPreset()
+	g := NewGame(r, 1)
+	g.Players[0].GameScore = r.WinScore
+	g.Round.BidWinner = 0
+	scoreRound(&g)
+	if g.Round.Phase != PhaseGameOver {
+		t.Fatalf("expected game over when reaching win score")
+	}
+}
+
+func TestGameDoesNotEndOnBarrel(t *testing.T) {
+	r := ClassicPreset()
+	g := NewGame(r, 1)
+	g.Players[0].GameScore = r.WinScore
+	g.Players[0].OnBarrel = true
+	g.Round.BidWinner = 0
+	scoreRound(&g)
+	if g.Round.Phase == PhaseGameOver {
+		t.Fatalf("game should not end while on barrel")
+	}
+}

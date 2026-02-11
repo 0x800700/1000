@@ -165,7 +165,7 @@ func scoreRound(g *GameState) {
 		}
 	}
 	for i := range g.Players {
-		if g.Players[i].GameScore >= g.Rules.BarrelThreshold && i != barrelOwner {
+		if g.Players[i].GameScore >= g.Rules.BarrelThreshold && g.Players[i].GameScore < g.Rules.WinScore && i != barrelOwner {
 			if barrelOwner >= 0 {
 				g.Players[barrelOwner].OnBarrel = false
 				g.Players[barrelOwner].BarrelAttempts = 0
@@ -200,7 +200,7 @@ func scoreRound(g *GameState) {
 
 	// Dump (reset to 0)
 	for i := range g.Players {
-		if g.Players[i].GameScore >= g.Rules.DumpThreshold || g.Players[i].GameScore <= g.Rules.DumpNegativeThreshold {
+		if g.Players[i].GameScore == g.Rules.DumpThreshold || g.Players[i].GameScore == g.Rules.DumpNegativeThreshold {
 			g.Players[i].GameScore = 0
 			g.LastRoundEffects.Dumped = append(g.LastRoundEffects.Dumped, i)
 		}

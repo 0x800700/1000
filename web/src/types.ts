@@ -22,6 +22,9 @@ export type PlayerView = {
   roundPts: number
   gameScore: number
   tricks: number
+  bolts: number
+  onBarrel: boolean
+  barrelAttempts: number
 }
 
 export type RoundView = {
@@ -37,6 +40,8 @@ export type RoundView = {
   passed?: Record<string, boolean>
   trickCards: Card[]
   trickOrder: number[]
+  winner: number
+  hasWinner: boolean
 }
 
 export type GameView = {
@@ -50,8 +55,12 @@ export type GameView = {
     bidStep: number
     maxBid: number
     snosCards: number
+    barrelAttempts: number
   }
   legalActions: ActionDTO[]
+  effects: {
+    dumped: number[]
+  }
   meta: {
     sessionId: string
     playerId: number

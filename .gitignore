@@ -3,6 +3,7 @@
 *.exe
 *.test
 *.out
+tmp/
 
 # Node
 web/node_modules/

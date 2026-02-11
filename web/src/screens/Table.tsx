@@ -101,6 +101,8 @@ export default function Table() {
     state?.round.trickOrder?.[state?.round.trickCards?.length ?? 0] ?? state?.round.bidTurn ?? null
   const botThinking = (id: number) => currentTurn === id
   const instruction = state ? phaseInstruction(state.round.phase) : 'Загрузка...'
+  const winnerId = state?.round.hasWinner ? state.round.winner : null
+  const dumped = state?.effects.dumped ?? []
 
   useEffect(() => {
     if (minNext !== null) {
@@ -255,6 +257,9 @@ export default function Table() {
               ? state.round.trickOrder?.[state.round.trickCards?.length ?? 0] ?? state.round.bidTurn ?? '-'
               : '-'}
           </div>
+          {state?.round.phase === 'GameOver' && winnerId !== null && winnerId >= 0 && (
+            <div className="winner-badge">Победитель: игрок {winnerId}</div>
+          )}
           {lastError && <div className="status-error">{lastError}</div>}
           <div className="action-row">
             <button className="secondary" onClick={() => setShowHelp((v) => !v)}>
@@ -399,6 +404,27 @@ export default function Table() {
                 <div>Фаза: {phaseLabel(state.round.phase)}</div>
                 <div>Ставка: {state.round.bidValue || '-'}</div>
                 <div>Козырь: {state.round.trump ? suitGlyph(state.round.trump) : '-'}</div>
+              </div>
+            )}
+            {state && (
+              <div className="status-panel">
+                <h3>Статусы</h3>
+                <div className="status-list">
+                  {state.players.map((p) => (
+                    <div key={p.id} className="status-item">
+                      <div className="status-title">Игрок {p.id}</div>
+                      <div className="status-badges">
+                        {p.onBarrel && (
+                          <span className="status-badge gold">
+                            Бочка {p.barrelAttempts + 1}/{state.rules.barrelAttempts}
+                          </span>
+                        )}
+                        {p.bolts > 0 && <span className="status-badge">Болты: {p.bolts}</span>}
+                        {dumped.includes(p.id) && <span className="status-badge warn">Самосвал</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             <ul className="log scroll">

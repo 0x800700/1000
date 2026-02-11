@@ -3,12 +3,15 @@ package server
 import "thousand/internal/engine"
 
 type PlayerView struct {
-	ID        int       `json:"id"`
-	Hand      []CardDTO `json:"hand,omitempty"`
-	HandCount int       `json:"handCount"`
-	RoundPts  int       `json:"roundPts"`
-	GameScore int       `json:"gameScore"`
-	Tricks    int       `json:"tricks"`
+	ID             int       `json:"id"`
+	Hand           []CardDTO `json:"hand,omitempty"`
+	HandCount      int       `json:"handCount"`
+	RoundPts       int       `json:"roundPts"`
+	GameScore      int       `json:"gameScore"`
+	Tricks         int       `json:"tricks"`
+	Bolts          int       `json:"bolts"`
+	OnBarrel       bool      `json:"onBarrel"`
+	BarrelAttempts int       `json:"barrelAttempts"`
 }
 
 type RoundView struct {
@@ -24,6 +27,8 @@ type RoundView struct {
 	Passed     map[int]bool `json:"passed"`
 	TrickCards []CardDTO    `json:"trickCards"`
 	TrickOrder []int        `json:"trickOrder"`
+	Winner     int          `json:"winner"`
+	HasWinner  bool         `json:"hasWinner"`
 }
 
 type GameView struct {
@@ -31,17 +36,19 @@ type GameView struct {
 	Round        RoundView    `json:"round"`
 	Rules        RulesView    `json:"rules"`
 	LegalActions []ActionDTO  `json:"legalActions"`
+	Effects      EffectsView  `json:"effects"`
 	Meta         MetaView     `json:"meta"`
 }
 
 type RulesView struct {
-	DealHandSize int `json:"dealHandSize"`
-	PlayHandSize int `json:"playHandSize"`
-	KittySize    int `json:"kittySize"`
-	BidMin       int `json:"bidMin"`
-	BidStep      int `json:"bidStep"`
-	MaxBid       int `json:"maxBid"`
-	SnosCards    int `json:"snosCards"`
+	DealHandSize   int `json:"dealHandSize"`
+	PlayHandSize   int `json:"playHandSize"`
+	KittySize      int `json:"kittySize"`
+	BidMin         int `json:"bidMin"`
+	BidStep        int `json:"bidStep"`
+	MaxBid         int `json:"maxBid"`
+	SnosCards      int `json:"snosCards"`
+	BarrelAttempts int `json:"barrelAttempts"`
 }
 
 type MetaView struct {
@@ -49,15 +56,22 @@ type MetaView struct {
 	PlayerID  int    `json:"playerId"`
 }
 
+type EffectsView struct {
+	Dumped []int `json:"dumped"`
+}
+
 func BuildGameView(g engine.GameState, viewer int, sessionID string) *GameView {
 	players := make([]PlayerView, 0, len(g.Players))
 	for i, p := range g.Players {
 		view := PlayerView{
-			ID:        p.ID,
-			HandCount: len(p.Hand),
-			RoundPts:  p.RoundPts,
-			GameScore: p.GameScore,
-			Tricks:    len(p.Tricks),
+			ID:             p.ID,
+			HandCount:      len(p.Hand),
+			RoundPts:       p.RoundPts,
+			GameScore:      p.GameScore,
+			Tricks:         len(p.Tricks),
+			Bolts:          p.Bolts,
+			OnBarrel:       p.OnBarrel,
+			BarrelAttempts: p.BarrelAttempts,
 		}
 		if i == viewer {
 			for _, c := range p.Hand {
@@ -94,17 +108,23 @@ func BuildGameView(g engine.GameState, viewer int, sessionID string) *GameView {
 			Passed:     g.Round.Passed,
 			TrickCards: trickCards,
 			TrickOrder: g.Round.TrickOrder,
+			Winner:     g.LastRoundEffects.Winner,
+			HasWinner:  g.LastRoundEffects.HasWinner,
 		},
 		Rules: RulesView{
-			DealHandSize: g.Rules.DealHandSize,
-			PlayHandSize: g.Rules.PlayHandSize,
-			KittySize:    g.Rules.KittySize,
-			BidMin:       g.Rules.BidMin,
-			BidStep:      g.Rules.BidStep,
-			MaxBid:       g.Rules.MaxBid,
-			SnosCards:    g.Rules.SnosCards,
+			DealHandSize:   g.Rules.DealHandSize,
+			PlayHandSize:   g.Rules.PlayHandSize,
+			KittySize:      g.Rules.KittySize,
+			BidMin:         g.Rules.BidMin,
+			BidStep:        g.Rules.BidStep,
+			MaxBid:         g.Rules.MaxBid,
+			SnosCards:      g.Rules.SnosCards,
+			BarrelAttempts: g.Rules.BarrelAttempts,
 		},
 		LegalActions: legal,
+		Effects: EffectsView{
+			Dumped: append([]int(nil), g.LastRoundEffects.Dumped...),
+		},
 		Meta: MetaView{
 			SessionID: sessionID,
 			PlayerID:  viewer,
