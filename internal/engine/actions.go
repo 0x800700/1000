@@ -22,6 +22,7 @@ type Action struct {
 }
 
 func LegalActions(g GameState, player int) []Action {
+	// Ordering is deterministic based on rules, bidding increments, and hand order.
 	switch g.Round.Phase {
 	case PhaseBidding:
 		return legalBids(g, player)

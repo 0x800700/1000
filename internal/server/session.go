@@ -178,8 +178,8 @@ func (s *Session) botAutoPlayLocked() {
 		action := bot.ChooseAction(s.state, player)
 		if err := engine.ApplyAction(&s.state, player, action); err != nil {
 			log.Printf("bot action error: player=%d phase=%v action=%v err=%v", player, s.state.Round.Phase, action.Type, err)
-			// Fallback to first legal action
-			action = legal[0]
+			// Phase-aware fallback to avoid stalls
+			action = fallbackAction(s.state, player, legal)
 			if err2 := engine.ApplyAction(&s.state, player, action); err2 != nil {
 				log.Printf("bot fallback error: player=%d phase=%v action=%v err=%v", player, s.state.Round.Phase, action.Type, err2)
 				s.sendError("bot_action_failed", "bot action failed")
@@ -195,6 +195,79 @@ func (s *Session) botAutoPlayLocked() {
 func (s *Session) ensureDealLocked() {
 	if s.state.Round.Phase == engine.PhaseDeal && !s.state.Round.HandsDealt {
 		engine.DealRound(&s.state)
+	}
+}
+
+func fallbackAction(state engine.GameState, player int, legal []engine.Action) engine.Action {
+	switch state.Round.Phase {
+	case engine.PhaseBidding:
+		for _, a := range legal {
+			if a.Type == engine.ActionPass {
+				return a
+			}
+		}
+		minBid := -1
+		var pick engine.Action
+		for _, a := range legal {
+			if a.Type != engine.ActionBid {
+				continue
+			}
+			if minBid == -1 || a.Bid < minBid {
+				minBid = a.Bid
+				pick = a
+			}
+		}
+		return pick
+	case engine.PhaseTrumpSelect:
+		counts := map[engine.Suit]int{}
+		for _, c := range state.Players[player].Hand {
+			counts[c.Suit]++
+		}
+		best := engine.SuitClubs
+		bestCount := -1
+		for s, c := range counts {
+			if c > bestCount {
+				bestCount = c
+				best = s
+			}
+		}
+		return engine.Action{Type: engine.ActionChooseTrump, Suit: &best}
+	case engine.PhaseDiscard:
+		count := state.Rules.KittySize
+		hand := append([]engine.Card(nil), state.Players[player].Hand...)
+		// sort by lowest points then rank strength
+		for i := 0; i < len(hand); i++ {
+			for j := i + 1; j < len(hand); j++ {
+				pi := engine.CardPoints(hand[i].Rank)
+				pj := engine.CardPoints(hand[j].Rank)
+				if pj < pi || (pj == pi && engine.RankStrength(hand[j].Rank) < engine.RankStrength(hand[i].Rank)) {
+					hand[i], hand[j] = hand[j], hand[i]
+				}
+			}
+		}
+		if count > len(hand) {
+			count = len(hand)
+		}
+		return engine.Action{Type: engine.ActionDiscard, Cards: hand[:count]}
+	case engine.PhasePlayTricks:
+		lowest := engine.Action{}
+		best := -1
+		for _, a := range legal {
+			if a.Type != engine.ActionPlayCard || a.Card == nil {
+				continue
+			}
+			score := engine.CardPoints(a.Card.Rank)*10 + engine.RankStrength(a.Card.Rank)
+			if best == -1 || score < best {
+				best = score
+				lowest = a
+			}
+		}
+		return lowest
+	default:
+		if len(legal) > 0 {
+			return legal[0]
+		}
+		return engine.Action{Type: engine.ActionPass}
 	}
 }
 
