@@ -103,6 +103,7 @@ export default function Table() {
   const instruction = state ? phaseInstruction(state.round.phase) : 'Загрузка...'
   const winnerId = state?.round.hasWinner ? state.round.winner : null
   const dumped = state?.effects.dumped ?? []
+  const me = state?.players?.[0]
 
   useEffect(() => {
     if (minNext !== null) {
@@ -251,6 +252,12 @@ export default function Table() {
         <div className="action-bar">
           <div className="instruction">{instruction}</div>
           <div className="action-hint">Конец игры: 1000 очков. Бочка — с 880, нужно набрать 120 за 3 попытки.</div>
+          {me && (
+            <div className="self-score">
+              Ваш счёт: <strong>{me.gameScore}</strong> • Взятки: <strong>{me.tricks}</strong> • Очки кона:{' '}
+              <strong>{me.roundPts}</strong>
+            </div>
+          )}
           <div className="action-status">
             {connected ? 'Подключено' : 'Отключено'} • Фаза: {phaseLabel(state?.round.phase)} • Ход игрока:{' '}
             {state
@@ -412,7 +419,9 @@ export default function Table() {
                 <div className="status-list">
                   {state.players.map((p) => (
                     <div key={p.id} className="status-item">
-                      <div className="status-title">Игрок {p.id}</div>
+                      <div className="status-title">
+                        Игрок {p.id} • Счёт: {p.gameScore} • Взятки: {p.tricks}
+                      </div>
                       <div className="status-badges">
                         {p.onBarrel && (
                           <span className="status-badge gold">
@@ -504,7 +513,7 @@ function formatEvent(e: any) {
     case 'trick_won':
       return `Взятку забрал игрок ${p} (+${e.data?.value ?? 0})`
     case 'round_scored':
-      return formatRoundScore(e.data?.points ?? [])
+      return `${formatRoundScore(e.data?.points ?? [])} • Начинается новый кон`
     case 'rospis_declared':
       return `Игрок ${p} объявил роспись`
     case 'bolt_awarded':
