@@ -51,3 +51,15 @@ func TestLegalBidsRespectsMaxBid(t *testing.T) {
 		}
 	}
 }
+
+func TestApplyActionRejectsIllegal(t *testing.T) {
+	r := ClassicPreset()
+	g := NewGame(r, 1)
+	DealRound(&g)
+	// Not the bid turn should fail
+	illegalPlayer := (g.Round.BidTurn + 1) % r.Players
+	err := ApplyAction(&g, illegalPlayer, Action{Type: ActionPass})
+	if err == nil {
+		t.Fatalf("expected error for illegal turn")
+	}
+}

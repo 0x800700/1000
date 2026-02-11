@@ -127,6 +127,7 @@ type RoundState struct {
 	Leader     int
 	Trump      *Suit
 	Kitty      []Card
+	Discarded  []Card
 	HandsDealt bool
 	Bids       map[int]int
 	Passed     map[int]bool

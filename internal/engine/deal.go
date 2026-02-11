@@ -41,6 +41,7 @@ func DealRound(g *GameState) {
 		idx += handSize
 	}
 	g.Round.Kitty = append([]Card(nil), deck[idx:idx+kittySize]...)
+	g.Round.Discarded = nil
 	g.Round.HandsDealt = true
 	g.Round.Phase = PhaseBidding
 	g.Round.Bids = make(map[int]int)

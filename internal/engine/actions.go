@@ -184,6 +184,7 @@ func applyDiscard(g *GameState, player int, a Action) error {
 		if !removeCard(&g.Players[player].Hand, c) {
 			return errors.New("discard card not in hand")
 		}
+		g.Round.Discarded = append(g.Round.Discarded, c)
 	}
 	if len(g.Players[player].Hand) != g.Rules.HandSize {
 		return errors.New("invalid hand size after discard")
