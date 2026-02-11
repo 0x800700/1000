@@ -141,6 +141,7 @@ func (s *Session) applyAction(actionId string, dto *ActionDTO) {
 	}
 	s.actionIds[actionId] = true
 
+	prev := s.state
 	action, err := dto.ToEngine()
 	if err != nil {
 		s.sendError("bad_action", err.Error())
@@ -152,7 +153,7 @@ func (s *Session) applyAction(actionId string, dto *ActionDTO) {
 		return
 	}
 	s.ensureDealLocked()
-	events := []Event{{Type: "action_applied", Data: dto}}
+	events := buildEvents(prev, s.state, player, action)
 	s.sendStateLocked(events)
 	s.botAutoPlayLocked()
 }
@@ -167,13 +168,14 @@ func (s *Session) botAutoPlayLocked() {
 		if !isBot {
 			return
 		}
+		prev := s.state
 		action := bot.ChooseAction(s.state, player)
 		if err := engine.ApplyAction(&s.state, player, action); err != nil {
 			log.Printf("bot action error: %v", err)
 			return
 		}
 		s.ensureDealLocked()
-		events := []Event{{Type: "bot_action", Data: ActionFromEngine(action)}}
+		events := buildEvents(prev, s.state, player, action)
 		s.sendStateLocked(events)
 	}
 }

@@ -46,6 +46,7 @@ export type GameView = {
     kittySize: number
     bidMin: number
     bidStep: number
+    maxBid: number
   }
   legalActions: ActionDTO[]
   meta: {

@@ -21,7 +21,7 @@ export default function Table() {
       if (msg.type === 'state') {
         setState(msg.state)
         if (msg.events && msg.events.length > 0) {
-          setLog((prev) => [...prev, ...msg.events.map((e) => e.type)])
+          setLog((prev) => [...prev, ...msg.events.map(formatEvent)])
         }
       }
       if (msg.type === 'error') {
@@ -87,6 +87,9 @@ export default function Table() {
   const minNext = bidValues.length > 0 ? Math.min(...bidValues) : null
   const bidStep = state?.rules.bidStep ?? 10
   const currentHighest = state?.round.bidValue ?? 0
+  const currentTurn =
+    state?.round.trickOrder?.[state?.round.trickCards?.length ?? 0] ?? state?.round.bidTurn ?? null
+  const botThinking = (id: number) => currentTurn === id
 
   useEffect(() => {
     if (minNext !== null) {
@@ -202,17 +205,23 @@ export default function Table() {
         )}
         <div className="table-top">
           <div className="bot-panel left">
-            <div className="bot-name">Bot A</div>
+            <div className="bot-name">
+              Bot A {botThinking(1) && <span className="thinking">•</span>}
+            </div>
             <div className="bot-stats">
               <div>Bid: {state?.round.bids?.['1'] ?? '-'}</div>
+              <div>Contract: {state?.round.bidWinner === 1 ? state?.round.bidValue : '-'}</div>
               <div>Tricks: {state?.players?.[1]?.tricks ?? 0}</div>
               <div>Score: {state?.players?.[1]?.gameScore ?? 0}</div>
             </div>
           </div>
           <div className="bot-panel right">
-            <div className="bot-name">Bot B</div>
+            <div className="bot-name">
+              Bot B {botThinking(2) && <span className="thinking">•</span>}
+            </div>
             <div className="bot-stats">
               <div>Bid: {state?.round.bids?.['2'] ?? '-'}</div>
+              <div>Contract: {state?.round.bidWinner === 2 ? state?.round.bidValue : '-'}</div>
               <div>Tricks: {state?.players?.[2]?.tricks ?? 0}</div>
               <div>Score: {state?.players?.[2]?.gameScore ?? 0}</div>
             </div>
@@ -440,4 +449,33 @@ function pickLowestPoints(cards: Card[], count: number) {
     return sa - sb
   })
   return sorted.slice(0, count)
+}
+
+function formatEvent(e: any) {
+  const p = e.data?.player
+  switch (e.type) {
+    case 'bid_made':
+      return `Player ${p} bid ${e.data?.bid}`
+    case 'bid_passed':
+      return `Player ${p} passed`
+    case 'trump_chosen':
+      return `Player ${p} chose trump ${e.data?.suit}`
+    case 'kitty_taken':
+      return `Player ${p} took kitty`
+    case 'discarded':
+      return `Player ${p} discarded`
+    case 'card_played':
+      return `Player ${p} played ${formatCard(e.data?.cards?.[0])}`
+    case 'trick_won':
+      return `Player ${p} won the trick`
+    case 'round_scored':
+      return `Round scored: ${e.data?.points?.join(', ')}`
+    default:
+      return e.type
+  }
+}
+
+function formatCard(card?: { rank: string; suit: string }) {
+  if (!card) return ''
+  return `${card.rank}${card.suit}`
 }

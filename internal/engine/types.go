@@ -86,6 +86,7 @@ type Rules struct {
 	KittySize              int
 	BidMin                 int
 	BidStep                int
+	MaxBid                 int
 	WinScore               int
 	MustFollowSuit         bool
 	MustTrumpIfVoid        bool
@@ -102,6 +103,7 @@ func ClassicPreset() Rules {
 		KittySize:              3,
 		BidMin:                 80,
 		BidStep:                10,
+		MaxBid:                 300,
 		WinScore:               1000,
 		MustFollowSuit:         true,
 		MustTrumpIfVoid:        false,

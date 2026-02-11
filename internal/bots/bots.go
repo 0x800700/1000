@@ -113,6 +113,13 @@ func bidByHeuristic(state engine.GameState, player int) engine.Action {
 	}
 	estimate := points + bonus
 	maxBid := (estimate / state.Rules.BidStep) * state.Rules.BidStep
+	rulesMax := state.Rules.MaxBid
+	if rulesMax <= 0 {
+		rulesMax = state.Rules.WinScore
+	}
+	if maxBid > rulesMax {
+		maxBid = rulesMax
+	}
 	if maxBid < state.Rules.BidMin {
 		return engine.Action{Type: engine.ActionPass}
 	}

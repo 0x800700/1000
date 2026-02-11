@@ -45,11 +45,12 @@ export default function PixiTable({ trickCards }: Props) {
     app.stage.addChild(ring)
 
     const trickGroup = new PIXI.Container()
-    const startX = app.screen.width / 2 - (trickCards.length * 52) / 2
+    const startX = app.screen.width / 2 - (trickCards.length * 70) / 2
     trickCards.forEach((c, i) => {
       const card = drawCard(c)
-      card.x = startX + i * 56
-      card.y = app.screen.height / 2 - 80
+      card.x = startX + i * 74
+      card.y = app.screen.height / 2 - 110
+      card.scale.set(1.3, 1.3)
       trickGroup.addChild(card)
     })
     app.stage.addChild(trickGroup)

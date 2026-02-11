@@ -235,7 +235,11 @@ func legalBids(g GameState, player int) []Action {
 		return nil
 	}
 	out := []Action{{Type: ActionPass}}
-	for bid := g.Rules.BidMin; bid <= g.Rules.WinScore; bid += g.Rules.BidStep {
+	maxBid := g.Rules.MaxBid
+	if maxBid <= 0 {
+		maxBid = g.Rules.WinScore
+	}
+	for bid := g.Rules.BidMin; bid <= maxBid; bid += g.Rules.BidStep {
 		if bid > g.Round.BidValue {
 			out = append(out, Action{Type: ActionBid, Bid: bid})
 		}

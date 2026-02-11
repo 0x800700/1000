@@ -37,3 +37,17 @@ func TestLegalPlaysFollowSuit(t *testing.T) {
 		t.Fatalf("expected only hearts to be legal")
 	}
 }
+
+func TestLegalBidsRespectsMaxBid(t *testing.T) {
+	r := ClassicPreset()
+	r.MaxBid = 200
+	g := NewGame(r, 1)
+	DealRound(&g)
+
+	acts := LegalActions(g, g.Round.BidTurn)
+	for _, a := range acts {
+		if a.Type == ActionBid && a.Bid > r.MaxBid {
+			t.Fatalf("bid exceeds max: %d", a.Bid)
+		}
+	}
+}

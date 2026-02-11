@@ -279,6 +279,25 @@ body {
   margin-bottom: 6px;
 }
 
+.thinking {
+  display: inline-block;
+  margin-left: 6px;
+  color: #e0c36a;
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.2;
+  }
+}
+
 .bot-stats {
   font-size: 12px;
   color: #d9c58f;

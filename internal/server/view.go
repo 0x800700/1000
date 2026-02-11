@@ -39,6 +39,7 @@ type RulesView struct {
 	KittySize int `json:"kittySize"`
 	BidMin    int `json:"bidMin"`
 	BidStep   int `json:"bidStep"`
+	MaxBid    int `json:"maxBid"`
 }
 
 type MetaView struct {
@@ -97,6 +98,7 @@ func BuildGameView(g engine.GameState, viewer int, sessionID string) *GameView {
 			KittySize: g.Rules.KittySize,
 			BidMin:    g.Rules.BidMin,
 			BidStep:   g.Rules.BidStep,
+			MaxBid:    g.Rules.MaxBid,
 		},
 		LegalActions: legal,
 		Meta: MetaView{
