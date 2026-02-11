@@ -168,11 +168,23 @@ func (s *Session) botAutoPlayLocked() {
 		if !isBot {
 			return
 		}
+		legal := engine.LegalActions(s.state, player)
+		if len(legal) == 0 {
+			log.Printf("bot no legal actions: player=%d phase=%v", player, s.state.Round.Phase)
+			s.sendError("bot_no_actions", "bot has no legal actions")
+			return
+		}
 		prev := s.state
 		action := bot.ChooseAction(s.state, player)
 		if err := engine.ApplyAction(&s.state, player, action); err != nil {
-			log.Printf("bot action error: %v", err)
-			return
+			log.Printf("bot action error: player=%d phase=%v action=%v err=%v", player, s.state.Round.Phase, action.Type, err)
+			// Fallback to first legal action
+			action = legal[0]
+			if err2 := engine.ApplyAction(&s.state, player, action); err2 != nil {
+				log.Printf("bot fallback error: player=%d phase=%v action=%v err=%v", player, s.state.Round.Phase, action.Type, err2)
+				s.sendError("bot_action_failed", "bot action failed")
+				return
+			}
 		}
 		s.ensureDealLocked()
 		events := buildEvents(prev, s.state, player, action)
