@@ -2,6 +2,8 @@
   font-family: "Source Sans 3", system-ui, sans-serif;
   color: #f5f1e6;
   background: #0c3d28;
+  --topbar-h: 64px;
+  --actionbar-h: 190px;
 }
 
 * {
@@ -13,6 +15,7 @@ body {
   background:
     radial-gradient(circle at top, rgba(17, 105, 66, 0.9), rgba(12, 61, 40, 0.95) 60%),
     radial-gradient(circle at bottom, rgba(6, 30, 20, 0.95), rgba(6, 20, 14, 1) 65%);
+  overflow: hidden;
 }
 
 .app {
@@ -29,6 +32,8 @@ body {
   background: rgba(8, 40, 26, 0.85);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(6px);
+  height: var(--topbar-h);
+  box-sizing: border-box;
 }
 
 .brand {
@@ -56,8 +61,10 @@ p {
 
 .content {
   flex: 1;
-  padding: 24px;
+  padding: 16px 24px;
   min-width: 1280px;
+  height: calc(100vh - var(--topbar-h));
+  box-sizing: border-box;
 }
 
 .panel {
@@ -85,18 +92,19 @@ p {
   grid-template-columns: minmax(0, 1fr) 360px;
   gap: 24px;
   align-items: stretch;
+  height: 100%;
 }
 
 .main-col {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  min-height: calc(100vh - 160px);
+  min-height: 0;
 }
 
 .pixi-surface {
   flex: 1;
-  min-height: 560px;
+  min-height: 0;
   background:
     radial-gradient(circle at center, rgba(20, 98, 62, 0.6), rgba(6, 20, 14, 0.85) 70%),
     radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.06), transparent 40%),
@@ -123,7 +131,7 @@ p {
 .pixi-root {
   width: 100%;
   height: 100%;
-  min-height: 500px;
+  min-height: 0;
 }
 
 .status-error {
@@ -180,7 +188,8 @@ p {
   backdrop-filter: blur(8px);
   border-radius: 12px;
   padding: 14px 18px;
-  min-height: 170px;
+  height: var(--actionbar-h);
+  box-sizing: border-box;
 }
 
 .action-status {
@@ -366,10 +375,13 @@ p {
   backdrop-filter: blur(8px);
   border-radius: 12px;
   padding: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .log.scroll {
-  max-height: 520px;
+  flex: 1;
   overflow-y: auto;
 }
 
