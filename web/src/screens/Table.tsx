@@ -18,6 +18,7 @@ export default function Table() {
   const [displayTrick, setDisplayTrick] = useState<Card[]>([])
   const [trickClearing, setTrickClearing] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  const helpRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const client = connect((msg: ServerMessage) => {
@@ -142,6 +143,41 @@ export default function Table() {
       setTrickClearing(false)
     }
   }, [trickCards, displayTrick.length])
+
+  useEffect(() => {
+    if (!showHelp) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setShowHelp(false)
+        return
+      }
+      if (e.key === 'Tab') {
+        const focusable = helpRef.current?.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+        if (!focusable || focusable.length === 0) return
+        const list = Array.from(focusable)
+        const first = list[0]
+        const last = list[list.length - 1]
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault()
+          last.focus()
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    const t = setTimeout(() => {
+      helpRef.current?.querySelector<HTMLElement>('button')?.focus()
+    }, 0)
+    return () => {
+      window.removeEventListener('keydown', handleKey)
+      clearTimeout(t)
+    }
+  }, [showHelp])
 
   function autoAction() {
     if (!state) return
@@ -423,9 +459,16 @@ export default function Table() {
           })}
         </div>
         {showHelp && (
-          <div className="modal">
-            <div className="modal-content">
+          <div className="modal" onClick={() => setShowHelp(false)}>
+            <div
+              className="modal-content"
+              ref={helpRef}
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => e.stopPropagation()}
+            >
               <h3>How to Play</h3>
+              <div className="help-phase">{phaseHelp(state?.round.phase)}</div>
               <p>
                 <strong>Phases:</strong> Bidding → Choose trump → Take kitty → Discard → Play tricks → Score.
               </p>
@@ -562,4 +605,23 @@ function formatEvent(e: any) {
 function formatCard(card?: { rank: string; suit: string }) {
   if (!card) return ''
   return `${card.rank}${card.suit}`
+}
+
+function phaseHelp(phase?: string) {
+  switch (phase) {
+    case 'Bidding':
+      return 'Bidding: choose a bid or pass. Highest bid wins the contract.'
+    case 'TrumpSelect':
+      return 'Choose the trump suit for this round.'
+    case 'KittyTake':
+      return 'Take the kitty to improve your hand.'
+    case 'Discard':
+      return 'Discard 3 cards to return to 7 cards.'
+    case 'PlayTricks':
+      return 'Play a card. Follow suit if you can.'
+    case 'ScoreRound':
+      return 'Scoring: points are counted for each player.'
+    default:
+      return 'Follow the prompts below to continue.'
+  }
 }
