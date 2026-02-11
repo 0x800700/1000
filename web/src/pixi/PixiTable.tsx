@@ -54,6 +54,8 @@ export default function PixiTable({
         if (destroyed) return
         containerRef.current?.appendChild(app.canvas)
         appRef.current = app
+        app.stage.eventMode = 'static'
+        app.stage.hitArea = app.screen
         resolverRef.current = new CardTextureFactory(app)
 
         const hand = new PIXI.Container()
@@ -195,23 +197,24 @@ function renderHand(
     sprite.scale.set(1)
 
     const isLegal = isDiscardPhase ? true : legal.has(cardKey(card))
+    const isSelected = isDiscardPhase && discardSelection.some((c) => cardKey(c) === cardKey(card))
     if (isLegal) {
       const glow = new PIXI.Graphics()
       glow.lineStyle(3, 0xc7a24a, 0.75)
       glow.drawRoundedRect(-70, -98, 140, 196, 14)
       cardContainer.addChild(glow)
     }
-    if (isDiscardPhase && discardSelection.some((c) => cardKey(c) === cardKey(card))) {
+    cardContainer.addChild(sprite)
+    if (isSelected) {
       const sel = new PIXI.Graphics()
       sel.lineStyle(3, 0xc7a24a, 0.9)
       sel.drawRoundedRect(-72, -100, 144, 200, 14)
       cardContainer.addChild(sel)
     }
-
-    cardContainer.addChild(sprite)
     const pos = positions[i]
+    const baseY = (deal ? deckPos.y : pos.y) + (isSelected ? -10 : 0)
     cardContainer.x = deal ? deckPos.x : pos.x
-    cardContainer.y = deal ? deckPos.y : pos.y
+    cardContainer.y = baseY
     cardContainer.rotation = pos.rotation
     cardContainer.scale.set(baseScale)
     cardContainer.alpha = isLegal ? 1 : 0.45
@@ -226,11 +229,11 @@ function renderHand(
         }
       })
       cardContainer.on('pointerover', () => {
-        cardContainer.y = pos.y - 6
+        cardContainer.y = baseY - 6
         cardContainer.scale.set(baseScale * 1.02)
       })
       cardContainer.on('pointerout', () => {
-        cardContainer.y = pos.y
+        cardContainer.y = baseY
         cardContainer.scale.set(baseScale)
       })
     }

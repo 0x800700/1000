@@ -100,6 +100,7 @@ export default function Table() {
   const currentTurn = state?.round.hasCurrent ? state.round.currentPlayer : null
   const botThinking = (id: number) => currentTurn === id
   const instruction = state ? phaseInstruction(state.round.phase) : 'Загрузка...'
+  const isDiscardPhase = state?.round.phase === 'Snos' || legalActions.some((a) => a.type === 'snos')
   const winnerId = state?.round.hasWinner ? state.round.winner : null
   const dumped = state?.effects.dumped ?? []
   const me = state?.players?.[0]
@@ -237,7 +238,7 @@ export default function Table() {
             state={state}
             legalCardKeys={legalCardKeys}
             discardSelection={discardSelection}
-            isDiscardPhase={state?.round.phase === 'Snos'}
+            isDiscardPhase={isDiscardPhase}
             onPlayCard={(card) =>
               sendActionOnSocket({
                 type: 'play_card',
@@ -367,6 +368,7 @@ export default function Table() {
               >
                 Снос
               </button>
+              <div className="action-note">Выберите 2 карты кликом по ним, затем нажмите «Снос»</div>
             </div>
           )}
           {state?.round.phase === 'PlayTricks' && (
