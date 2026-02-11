@@ -1,12 +1,15 @@
 import { useEffect, useRef } from 'react'
 import * as PIXI from 'pixi.js'
 import type { Card, GameView } from '../types'
-import { createTextureResolver } from './textures'
+import { CardTextureFactory } from './textures'
 
 type Props = {
   state: GameView | null
   legalCardKeys: Set<string>
+  discardSelection: Card[]
+  isDiscardPhase: boolean
   onPlayCard: (card: Card) => void
+  onToggleDiscard: (card: Card) => void
 }
 
 type Containers = {
@@ -17,10 +20,17 @@ type Containers = {
   effects: PIXI.Container
 }
 
-export default function PixiTable({ state, legalCardKeys, onPlayCard }: Props) {
+export default function PixiTable({
+  state,
+  legalCardKeys,
+  discardSelection,
+  isDiscardPhase,
+  onPlayCard,
+  onToggleDiscard
+}: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const appRef = useRef<PIXI.Application | null>(null)
-  const resolverRef = useRef<ReturnType<typeof createTextureResolver> | null>(null)
+  const resolverRef = useRef<CardTextureFactory | null>(null)
   const containersRef = useRef<Containers | null>(null)
   const prevRef = useRef<{ hand: Card[]; trick: Card[]; phase?: string }>({ hand: [], trick: [] })
 
@@ -39,7 +49,7 @@ export default function PixiTable({ state, legalCardKeys, onPlayCard }: Props) {
         if (destroyed) return
         containerRef.current?.appendChild(app.canvas)
         appRef.current = app
-        resolverRef.current = createTextureResolver(app)
+        resolverRef.current = new CardTextureFactory(app)
 
         const hand = new PIXI.Container()
         const trick = new PIXI.Container()
@@ -66,7 +76,7 @@ export default function PixiTable({ state, legalCardKeys, onPlayCard }: Props) {
 
     const width = app.screen.width
     const height = app.screen.height
-    const deckPos = { x: width / 2, y: 90 }
+  const deckPos = { x: width / 2, y: 90 }
 
     renderDeck(containers.deck, resolver, deckPos)
     renderBots(containers.bots, resolver, state, width)
@@ -77,7 +87,21 @@ export default function PixiTable({ state, legalCardKeys, onPlayCard }: Props) {
     const prev = prevRef.current
     const deal = prev.hand.length === 0 && hand.length > 0
 
-    renderHand(containers.hand, resolver, hand, legalCardKeys, onPlayCard, width, height, deal, deckPos, app)
+    renderHand(
+      containers.hand,
+      resolver,
+      hand,
+      legalCardKeys,
+      discardSelection,
+      onPlayCard,
+      onToggleDiscard,
+      width,
+      height,
+      deal,
+      deckPos,
+      app,
+      isDiscardPhase
+    )
 
     if (trick.length === 0 && prev.trick.length > 0) {
       fadeOutTrick(containers.trick, app)
@@ -100,7 +124,7 @@ export default function PixiTable({ state, legalCardKeys, onPlayCard }: Props) {
   return <div className="pixi-root" ref={containerRef} />
 }
 
-function renderDeck(container: PIXI.Container, resolver: ReturnType<typeof createTextureResolver>, pos: { x: number; y: number }) {
+function renderDeck(container: PIXI.Container, resolver: CardTextureFactory, pos: { x: number; y: number }) {
   container.removeChildren()
   const back = new PIXI.Sprite(resolver.getBackTexture())
   back.anchor.set(0.5)
@@ -109,15 +133,15 @@ function renderDeck(container: PIXI.Container, resolver: ReturnType<typeof creat
   container.addChild(back)
 }
 
-function renderBots(container: PIXI.Container, resolver: ReturnType<typeof createTextureResolver>, state: GameView | null, width: number) {
+function renderBots(container: PIXI.Container, resolver: CardTextureFactory, state: GameView | null, width: number) {
   container.removeChildren()
   const counts = [
     state?.players?.[1]?.handCount ?? 0,
     state?.players?.[2]?.handCount ?? 0
   ]
   const positions = [
-    { x: 140, y: 120 },
-    { x: width - 140, y: 120 }
+    { x: 150, y: 120 },
+    { x: width - 150, y: 120 }
   ]
   for (let i = 0; i < 2; i++) {
     const stack = new PIXI.Container()
@@ -128,7 +152,7 @@ function renderBots(container: PIXI.Container, resolver: ReturnType<typeof creat
       s.anchor.set(0.5)
       s.x = positions[i].x + j * 4
       s.y = positions[i].y + j * 3
-      s.scale.set(0.7)
+      s.scale.set(0.55)
       stack.addChild(s)
     }
     container.addChild(stack)
@@ -137,15 +161,18 @@ function renderBots(container: PIXI.Container, resolver: ReturnType<typeof creat
 
 function renderHand(
   container: PIXI.Container,
-  resolver: ReturnType<typeof createTextureResolver>,
+  resolver: CardTextureFactory,
   hand: Card[],
   legal: Set<string>,
+  discardSelection: Card[],
   onPlayCard: (card: Card) => void,
+  onToggleDiscard: (card: Card) => void,
   width: number,
   height: number,
   deal: boolean,
   deckPos: { x: number; y: number },
-  app: PIXI.Application
+  app: PIXI.Application,
+  isDiscardPhase: boolean
 ) {
   container.removeChildren()
   const positions = handPositions(hand.length, width, height)
@@ -155,12 +182,18 @@ function renderHand(
     sprite.anchor.set(0.5)
     sprite.scale.set(0.95)
 
-    const isLegal = legal.has(cardKey(card))
+    const isLegal = isDiscardPhase ? true : legal.has(cardKey(card))
     if (isLegal) {
       const glow = new PIXI.Graphics()
       glow.lineStyle(2, 0xe0c36a, 0.9)
-      glow.drawRoundedRect(-39, -57, 78, 114, 10)
+      glow.drawRoundedRect(-70, -98, 140, 196, 14)
       cardContainer.addChild(glow)
+    }
+    if (isDiscardPhase && discardSelection.some((c) => cardKey(c) === cardKey(card))) {
+      const sel = new PIXI.Graphics()
+      sel.lineStyle(3, 0xc7a24a, 0.9)
+      sel.drawRoundedRect(-72, -100, 144, 200, 14)
+      cardContainer.addChild(sel)
     }
 
     cardContainer.addChild(sprite)
@@ -172,7 +205,21 @@ function renderHand(
     cardContainer.eventMode = isLegal ? 'static' : 'none'
     if (isLegal) {
       cardContainer.cursor = 'pointer'
-      cardContainer.on('pointertap', () => onPlayCard(card))
+      cardContainer.on('pointertap', () => {
+        if (isDiscardPhase) {
+          onToggleDiscard(card)
+        } else {
+          onPlayCard(card)
+        }
+      })
+      cardContainer.on('pointerover', () => {
+        cardContainer.y = pos.y - 8
+        cardContainer.scale.set(1.03)
+      })
+      cardContainer.on('pointerout', () => {
+        cardContainer.y = pos.y
+        cardContainer.scale.set(1)
+      })
     }
     container.addChild(cardContainer)
     if (deal) {
@@ -183,21 +230,21 @@ function renderHand(
 
 function renderTrick(
   container: PIXI.Container,
-  resolver: ReturnType<typeof createTextureResolver>,
+  resolver: CardTextureFactory,
   trick: Card[],
   width: number,
   height: number,
   app: PIXI.Application
 ) {
   container.removeChildren()
-  const center = { x: width / 2, y: height / 2 - 20 }
-  const startX = center.x - ((trick.length - 1) * 70) / 2
+  const center = { x: width / 2, y: height / 2 - 10 }
+  const startX = center.x - ((trick.length - 1) * 90) / 2
   trick.forEach((card, i) => {
     const sprite = new PIXI.Sprite(resolver.getCardTexture(card))
     sprite.anchor.set(0.5)
-    sprite.x = startX + i * 70
+    sprite.x = startX + i * 90
     sprite.y = center.y
-    sprite.scale.set(1.2)
+    sprite.scale.set(1.0)
     sprite.alpha = 0
     container.addChild(sprite)
     tween(app, sprite, { alpha: 1 }, 140)
@@ -215,7 +262,7 @@ function fadeOutTrick(container: PIXI.Container, app: PIXI.Application) {
 
 function animatePlay(
   effects: PIXI.Container,
-  resolver: ReturnType<typeof createTextureResolver>,
+  resolver: CardTextureFactory,
   card: Card,
   from: { x: number; y: number },
   to: { x: number; y: number },
@@ -234,12 +281,13 @@ function animatePlay(
 
 function handPositions(count: number, width: number, height: number) {
   const positions: { x: number; y: number; rotation: number }[] = []
-  const startX = width / 2 - (count - 1) * 40 / 2
+  const spacing = 64
+  const startX = width / 2 - (count - 1) * spacing / 2
   for (let i = 0; i < count; i++) {
     const offset = i - (count - 1) / 2
     positions.push({
-      x: startX + i * 40,
-      y: height - 90 - Math.abs(offset) * 3,
+      x: startX + i * spacing,
+      y: height - 110 - Math.abs(offset) * 4,
       rotation: (offset * 3 * Math.PI) / 180
     })
   }
@@ -257,9 +305,9 @@ function prevHandPosition(hand: Card[], card: Card, width: number, height: numbe
 
 function trickPosition(trick: Card[], card: Card, width: number, height: number) {
   const idx = trick.findIndex((c) => cardKey(c) === cardKey(card))
-  const center = { x: width / 2, y: height / 2 - 20 }
-  const startX = center.x - ((trick.length - 1) * 70) / 2
-  return { x: startX + idx * 70, y: center.y }
+  const center = { x: width / 2, y: height / 2 - 10 }
+  const startX = center.x - ((trick.length - 1) * 90) / 2
+  return { x: startX + idx * 90, y: center.y }
 }
 
 function tween(

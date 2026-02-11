@@ -200,7 +200,10 @@ export default function Table() {
         <PixiTable
           state={state}
           legalCardKeys={legalCardKeys}
+          discardSelection={discardSelection}
+          isDiscardPhase={state?.round.phase === 'Discard'}
           onPlayCard={(card) => sendActionOnSocket({ type: 'play_card', card })}
+          onToggleDiscard={(card) => toggleDiscard(card)}
         />
         {!state && (
           <div className="loading">
@@ -404,23 +407,7 @@ export default function Table() {
             </div>
           )}
         </div>
-        <div className="hand-fan">
-          {state?.round.phase === 'Discard' &&
-            hand.map((c) => {
-              const key = cardKey(c)
-              const isSelected = discardSelection.some((d) => cardKey(d) === key)
-              return (
-                <button
-                  key={key}
-                  className={`card-select ${isSelected ? 'selected' : ''}`}
-                  onClick={() => toggleDiscard(c)}
-                >
-                  {c.rank}
-                  {c.suit}
-                </button>
-              )
-            })}
-        </div>
+        <div className="hand-fan" />
         {showHelp && (
           <div className="modal" onClick={() => setShowHelp(false)}>
             <div
