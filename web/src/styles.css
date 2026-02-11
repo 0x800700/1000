@@ -4,10 +4,15 @@
   background: #0c3d28;
   --topbar-h: 64px;
   --gap: 24px;
+  --ui-scale: 1;
 }
 
 * {
   box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
 }
 
 body {
@@ -15,13 +20,21 @@ body {
   background:
     radial-gradient(circle at top, rgba(17, 105, 66, 0.9), rgba(12, 61, 40, 0.95) 60%),
     radial-gradient(circle at bottom, rgba(6, 30, 20, 0.95), rgba(6, 20, 14, 1) 65%);
-  overflow-y: auto;
+  overflow: hidden;
+}
+
+.ui-scale {
+  width: calc(100% / var(--ui-scale));
+  height: calc(100% / var(--ui-scale));
+  transform: scale(var(--ui-scale));
+  transform-origin: top left;
 }
 
 .app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .topbar {
