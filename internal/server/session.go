@@ -92,6 +92,7 @@ type Event struct {
 }
 
 func (s *Session) handleMessage(msg ClientMessage) {
+	log.Printf("ws message: %s", msg.Type)
 	switch msg.Type {
 	case "join_session":
 		s.sendState(nil)
@@ -148,10 +149,12 @@ func (s *Session) applyAction(actionId string, dto *ActionDTO) {
 		return
 	}
 	player := 0
+	log.Printf("player action: p=%d phase=%v action=%v", player, s.state.Round.Phase, action.Type)
 	if err := engine.ApplyAction(&s.state, player, action); err != nil {
 		s.sendError("apply_failed", err.Error())
 		return
 	}
+	log.Printf("player action applied: phase=%v", s.state.Round.Phase)
 	s.ensureDealLocked()
 	events := buildEvents(prev, s.state, player, action)
 	s.sendStateLocked(events)
@@ -159,9 +162,18 @@ func (s *Session) applyAction(actionId string, dto *ActionDTO) {
 }
 
 func (s *Session) botAutoPlayLocked() {
+	steps := 0
 	for {
+		steps++
+		if steps > 200 {
+			log.Printf("bot autoplay stopped: too many steps in one cycle")
+			return
+		}
 		player, ok := engine.CurrentPlayer(s.state)
 		if !ok {
+			if s.state.Round.Phase == engine.PhaseBidding || s.state.Round.Phase == engine.PhaseKittyTake || s.state.Round.Phase == engine.PhaseSnos || s.state.Round.Phase == engine.PhasePlayTricks {
+				log.Printf("bot autoplay: no current player in phase %v", s.state.Round.Phase)
+			}
 			return
 		}
 		bot, isBot := s.botPlayers[player]
@@ -176,6 +188,7 @@ func (s *Session) botAutoPlayLocked() {
 		}
 		prev := s.state
 		action := bot.ChooseAction(s.state, player)
+		log.Printf("bot action: p=%d phase=%v action=%v", player, s.state.Round.Phase, action.Type)
 		if err := engine.ApplyAction(&s.state, player, action); err != nil {
 			log.Printf("bot action error: player=%d phase=%v action=%v err=%v", player, s.state.Round.Phase, action.Type, err)
 			// Phase-aware fallback to avoid stalls
@@ -185,6 +198,7 @@ func (s *Session) botAutoPlayLocked() {
 				s.sendError("bot_action_failed", "bot action failed")
 				return
 			}
+			log.Printf("bot fallback applied: p=%d phase=%v action=%v", player, s.state.Round.Phase, action.Type)
 		}
 		s.ensureDealLocked()
 		events := buildEvents(prev, s.state, player, action)

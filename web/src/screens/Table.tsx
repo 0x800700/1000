@@ -97,8 +97,7 @@ export default function Table() {
   const minNext = bidValues.length > 0 ? Math.min(...bidValues) : null
   const bidStep = state?.rules.bidStep ?? 10
   const currentHighest = state?.round.bidValue ?? 0
-  const currentTurn =
-    state?.round.trickOrder?.[state?.round.trickCards?.length ?? 0] ?? state?.round.bidTurn ?? null
+  const currentTurn = state?.round.hasCurrent ? state.round.currentPlayer : null
   const botThinking = (id: number) => currentTurn === id
   const instruction = state ? phaseInstruction(state.round.phase) : 'Загрузка...'
   const winnerId = state?.round.hasWinner ? state.round.winner : null
@@ -261,7 +260,9 @@ export default function Table() {
           <div className="action-status">
             {connected ? 'Подключено' : 'Отключено'} • Фаза: {phaseLabel(state?.round.phase)} • Ход игрока:{' '}
             {state
-              ? state.round.trickOrder?.[state.round.trickCards?.length ?? 0] ?? state.round.bidTurn ?? '-'
+              ? state.round.hasCurrent
+                ? state.round.currentPlayer
+                : '-'
               : '-'}
           </div>
           {state?.round.phase === 'GameOver' && winnerId !== null && winnerId >= 0 && (

@@ -15,20 +15,22 @@ type PlayerView struct {
 }
 
 type RoundView struct {
-	Phase      string       `json:"phase"`
-	Dealer     int          `json:"dealer"`
-	Leader     int          `json:"leader"`
-	Trump      *string      `json:"trump,omitempty"`
-	KittyCount int          `json:"kittyCount"`
-	BidTurn    int          `json:"bidTurn"`
-	BidWinner  int          `json:"bidWinner"`
-	BidValue   int          `json:"bidValue"`
-	Bids       map[int]int  `json:"bids"`
-	Passed     map[int]bool `json:"passed"`
-	TrickCards []CardDTO    `json:"trickCards"`
-	TrickOrder []int        `json:"trickOrder"`
-	Winner     int          `json:"winner"`
-	HasWinner  bool         `json:"hasWinner"`
+	Phase         string       `json:"phase"`
+	Dealer        int          `json:"dealer"`
+	Leader        int          `json:"leader"`
+	Trump         *string      `json:"trump,omitempty"`
+	KittyCount    int          `json:"kittyCount"`
+	BidTurn       int          `json:"bidTurn"`
+	BidWinner     int          `json:"bidWinner"`
+	BidValue      int          `json:"bidValue"`
+	Bids          map[int]int  `json:"bids"`
+	Passed        map[int]bool `json:"passed"`
+	TrickCards    []CardDTO    `json:"trickCards"`
+	TrickOrder    []int        `json:"trickOrder"`
+	Winner        int          `json:"winner"`
+	HasWinner     bool         `json:"hasWinner"`
+	CurrentPlayer int          `json:"currentPlayer"`
+	HasCurrent    bool         `json:"hasCurrent"`
 }
 
 type GameView struct {
@@ -93,23 +95,26 @@ func BuildGameView(g engine.GameState, viewer int, sessionID string) *GameView {
 	for _, a := range engine.LegalActions(g, viewer) {
 		legal = append(legal, ActionFromEngine(a))
 	}
+	currentPlayer, hasCurrent := engine.CurrentPlayer(g)
 	return &GameView{
 		Players: players,
 		Round: RoundView{
-			Phase:      phaseToString(g.Round.Phase),
-			Dealer:     g.Round.Dealer,
-			Leader:     g.Round.Leader,
-			Trump:      trump,
-			KittyCount: len(g.Round.Kitty),
-			BidTurn:    g.Round.BidTurn,
-			BidWinner:  g.Round.BidWinner,
-			BidValue:   g.Round.BidValue,
-			Bids:       g.Round.Bids,
-			Passed:     g.Round.Passed,
-			TrickCards: trickCards,
-			TrickOrder: g.Round.TrickOrder,
-			Winner:     g.LastRoundEffects.Winner,
-			HasWinner:  g.LastRoundEffects.HasWinner,
+			Phase:         phaseToString(g.Round.Phase),
+			Dealer:        g.Round.Dealer,
+			Leader:        g.Round.Leader,
+			Trump:         trump,
+			KittyCount:    len(g.Round.Kitty),
+			BidTurn:       g.Round.BidTurn,
+			BidWinner:     g.Round.BidWinner,
+			BidValue:      g.Round.BidValue,
+			Bids:          g.Round.Bids,
+			Passed:        g.Round.Passed,
+			TrickCards:    trickCards,
+			TrickOrder:    g.Round.TrickOrder,
+			Winner:        g.LastRoundEffects.Winner,
+			HasWinner:     g.LastRoundEffects.HasWinner,
+			CurrentPlayer: currentPlayer,
+			HasCurrent:    hasCurrent,
 		},
 		Rules: RulesView{
 			DealHandSize:   g.Rules.DealHandSize,

@@ -42,6 +42,8 @@ export type RoundView = {
   trickOrder: number[]
   winner: number
   hasWinner: boolean
+  currentPlayer: number
+  hasCurrent: boolean
 }
 
 export type GameView = {
