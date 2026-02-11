@@ -17,6 +17,7 @@ export default function Table() {
   const [showDebug, setShowDebug] = useState(false)
   const [displayTrick, setDisplayTrick] = useState<Card[]>([])
   const [trickClearing, setTrickClearing] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
 
   useEffect(() => {
     const client = connect((msg: ServerMessage) => {
@@ -252,6 +253,11 @@ export default function Table() {
             {state?.round.trickOrder?.[state?.round.trickCards?.length ?? 0] ?? state?.round.bidTurn ?? '-'}
           </div>
           {lastError && <div className="status-error">{lastError}</div>}
+          <div className="action-row">
+            <button className="secondary" onClick={() => setShowHelp(true)}>
+              Help
+            </button>
+          </div>
           {import.meta.env.DEV && (
             <button className="secondary ghost" onClick={() => setShowDebug((v) => !v)}>
               {showDebug ? 'Hide debug' : 'Show debug'}
@@ -416,6 +422,34 @@ export default function Table() {
             )
           })}
         </div>
+        {showHelp && (
+          <div className="modal">
+            <div className="modal-content">
+              <h3>How to Play</h3>
+              <p>
+                <strong>Phases:</strong> Bidding → Choose trump → Take kitty → Discard → Play tricks → Score.
+              </p>
+              <ul className="help-list">
+                <li>Bidding: choose a bid or Pass. Highest bid wins the contract.</li>
+                <li>Trump: contract player chooses the trump suit.</li>
+                <li>Kitty: contract player takes 3 cards, then discards 3 back to 7.</li>
+                <li>Play: follow suit if you can. Win tricks to earn points.</li>
+              </ul>
+              <p>
+                <strong>Bid</strong> = your promised points. <strong>Contract</strong> = winning bid.{' '}
+                <strong>Tricks</strong> = rounds you won. <strong>Score</strong> = total points.
+              </p>
+              <p>
+                Need help? Tap <strong>Auto</strong> to let the game play a reasonable move.
+              </p>
+              <div className="modal-actions">
+                <button className="primary" onClick={() => setShowHelp(false)}>
+                  Got it
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <aside className="side-panel log-panel">
         <h2>Event Log</h2>
