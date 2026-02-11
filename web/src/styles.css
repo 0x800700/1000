@@ -3,6 +3,7 @@
   color: #f5f1e6;
   background: #0c3d28;
   --topbar-h: 64px;
+  --gap: 24px;
 }
 
 * {
@@ -62,7 +63,7 @@ p {
   flex: 1;
   padding: 16px 24px;
   min-width: 1280px;
-  min-height: calc(100vh - var(--topbar-h));
+  height: calc(100vh - var(--topbar-h));
   box-sizing: border-box;
 }
 
@@ -89,21 +90,22 @@ p {
 .table-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 24px;
+  gap: var(--gap);
   align-items: stretch;
-  min-height: calc(100vh - var(--topbar-h) - 32px);
+  height: 100%;
 }
 
 .main-col {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 16px;
   min-height: 0;
+  height: 100%;
 }
 
 .pixi-surface {
   flex: 1;
-  min-height: 420px;
+  min-height: 0;
   background:
     radial-gradient(circle at center, rgba(20, 98, 62, 0.6), rgba(6, 20, 14, 0.85) 70%),
     radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.06), transparent 40%),
@@ -130,7 +132,7 @@ p {
 .pixi-root {
   width: 100%;
   height: 100%;
-  min-height: 420px;
+  min-height: 0;
 }
 
 .status-error {
@@ -187,8 +189,41 @@ p {
   backdrop-filter: blur(8px);
   border-radius: 12px;
   padding: 14px 18px;
-  min-height: 170px;
+  min-height: 150px;
   box-sizing: border-box;
+}
+
+@media (max-height: 860px) {
+  :root {
+    --gap: 16px;
+  }
+  .content {
+    padding: 12px 18px;
+  }
+  .instruction {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .action-hint,
+  .action-status,
+  .self-score,
+  .turn-hint {
+    font-size: 11px;
+  }
+  .bid-panel {
+    min-width: 320px;
+    padding: 8px 10px;
+  }
+  .bid-info {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .bid-actions {
+    gap: 6px;
+  }
+  .action-bar {
+    padding: 10px 12px;
+  }
 }
 
 .action-status {
