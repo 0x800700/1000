@@ -209,9 +209,13 @@ p {
 @media (max-height: 860px) {
   :root {
     --gap: 16px;
+    --topbar-h: 56px;
   }
   .content {
     padding: 12px 18px;
+  }
+  .topbar {
+    padding: 10px 18px;
   }
   .instruction {
     font-size: 13px;
@@ -236,6 +240,19 @@ p {
   }
   .action-bar {
     padding: 10px 12px;
+  }
+}
+
+@media (max-height: 760px) {
+  .action-hint,
+  .self-score {
+    display: none;
+  }
+  .bid-info {
+    display: none;
+  }
+  .action-bar {
+    padding: 8px 10px;
   }
 }
 

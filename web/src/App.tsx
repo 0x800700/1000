@@ -7,7 +7,7 @@ import Table from './screens/Table'
 export default function App() {
   useEffect(() => {
     const baseWidth = 1280
-    const baseHeight = 900
+    const baseHeight = 1000
     const applyScale = () => {
       const scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / baseHeight, 1)
       document.documentElement.style.setProperty('--ui-scale', scale.toString())
